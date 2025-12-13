@@ -1,0 +1,10 @@
+DROP TABLE IF EXISTS sessions;
+DROP TABLE IF EXISTS messages;
+DROP TABLE IF EXISTS conversations;
+DROP TABLE IF EXISTS friendships;
+DROP TABLE IF EXISTS card_pairs;
+DROP TABLE IF EXISTS cards;
+DROP TABLE IF EXISTS users;
+DROP FUNCTION IF EXISTS update_conversation_last_message();
+DROP FUNCTION IF EXISTS update_timestamp();
+DROP FUNCTION IF EXISTS cleanup_expired_pairs();

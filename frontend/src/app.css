@@ -1,0 +1,14 @@
+@import 'tailwindcss';
+
+/* Ensure full viewport height on mobile */
+html, body {
+	height: 100%;
+	overflow: hidden;
+	overscroll-behavior: none;
+}
+
+/* Prevent iOS Safari rubber-banding */
+body {
+	position: fixed;
+	width: 100%;
+}

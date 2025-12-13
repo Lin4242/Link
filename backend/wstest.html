@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head><title>WS Test</title></head>
+<body>
+<pre id="log"></pre>
+<script>
+const JWT_SECRET = 'adab22111811be224304bd27f82fa85b36424b9a4f2e0be16f4033a7e4e2b646';
+const USER_ID = 'a7e5e31c-ade9-46cb-8b11-083460ae313c';
+const TO_USER = 'fcf454d3-d34a-4765-bc75-e9c3aa4bd9c3';
+
+function log(msg) {
+    document.getElementById('log').textContent += new Date().toLocaleTimeString() + ' ' + msg + '\n';
+}
+
+// Simple JWT generation (HS256)
+async function generateToken() {
+    const header = btoa(JSON.stringify({alg: 'HS256', typ: 'JWT'})).replace(/=/g, '');
+    const payload = btoa(JSON.stringify({
+        uid: USER_ID,
+        exp: Math.floor(Date.now()/1000) + 3600,
+        iat: Math.floor(Date.now()/1000),
+        nbf: Math.floor(Date.now()/1000)
+    })).replace(/=/g, '');
+
+    const enc = new TextEncoder();
+    const key = await crypto.subtle.importKey('raw', enc.encode(JWT_SECRET), {name: 'HMAC', hash: 'SHA-256'}, false, ['sign']);
+    const sig = await crypto.subtle.sign('HMAC', key, enc.encode(header + '.' + payload));
+    const sigB64 = btoa(String.fromCharCode(...new Uint8Array(sig))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+
+    return header + '.' + payload + '.' + sigB64;
+}
+
+async function test() {
+    log('Generating token...');
+    const token = await generateToken();
+    log('Token: ' + token.substring(0, 30) + '...');
+
+    log('Connecting WebSocket...');
+    const ws = new WebSocket('wss://127.0.0.1:9443/ws?token=' + token);
+
+    ws.onopen = () => {
+        log('CONNECTED!');
+
+        setTimeout(() => {
+            const msg = {
+                t: 'msg',
+                p: {
+                    to: TO_USER,
+                    encrypted_content: '{"nonce":"browser-test","ciphertext":"hello"}',
+                    temp_id: 'browser-test-' + Date.now()
+                }
+            };
+            log('SENDING: ' + JSON.stringify(msg));
+            ws.send(JSON.stringify(msg));
+        }, 1000);
+    };
+
+    ws.onmessage = (e) => {
+        log('RECEIVED: ' + e.data);
+        const msg = JSON.parse(e.data);
+        if (msg.t === 'delivered') {
+            log('*** DELIVERED CONFIRMED! temp_id=' + msg.p.temp_id);
+        }
+    };
+
+    ws.onerror = (e) => log('ERROR: ' + JSON.stringify(e));
+    ws.onclose = (e) => log('CLOSED: code=' + e.code);
+}
+
+test();
+</script>
+</body>
+</html>

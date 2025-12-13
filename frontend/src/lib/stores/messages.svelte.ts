@@ -1,0 +1,162 @@
+import type { EncryptedMessage } from '$lib/types';
+import { conversationsApi } from '$lib/api';
+import { decryptFromString } from '$lib/crypto';
+import { keysStore } from './keys.svelte';
+
+export interface DecryptedMessageItem {
+	id: string;
+	conversationId: string;
+	senderId: string;
+	content: string;
+	createdAt: string;
+	deliveredAt?: string;
+	readAt?: string;
+	pending?: boolean;
+	tempId?: string;
+}
+
+function createMessagesStore() {
+	let messagesByConversation = $state<Record<string, DecryptedMessageItem[]>>({});
+	let loading = $state(false);
+
+	async function loadMessages(
+		conversationId: string,
+		peerPublicKey: string,
+		before?: string
+	): Promise<void> {
+		console.log('=== loadMessages called ===', {
+			conversationId,
+			peerPublicKey: peerPublicKey?.substring(0, 20) + '...',
+			hasSecretKey: !!keysStore.secretKey,
+			secretKeyLength: keysStore.secretKey?.length
+		});
+
+		loading = true;
+		const res = await conversationsApi.getMessages(conversationId, 50, before);
+
+		console.log('API response:', {
+			hasData: !!res.data,
+			messageCount: res.data?.length || 0,
+			error: res.error
+		});
+
+		if (res.data && keysStore.secretKey) {
+			let decryptSuccessCount = 0;
+			let decryptFailCount = 0;
+
+			const decrypted = res.data
+				.map((m, index) => {
+					const content = decryptFromString(m.encrypted_content, peerPublicKey, keysStore.secretKey!);
+					if (!content) {
+						decryptFailCount++;
+						console.log(`Message ${index} decrypt FAILED:`, {
+							id: m.id,
+							senderId: m.sender_id,
+							encryptedContentPreview: m.encrypted_content?.substring(0, 50) + '...'
+						});
+						return null;
+					}
+					decryptSuccessCount++;
+					return {
+						id: m.id,
+						conversationId: m.conversation_id,
+						senderId: m.sender_id,
+						content,
+						createdAt: m.created_at,
+					} as DecryptedMessageItem;
+				})
+				.filter((m): m is DecryptedMessageItem => m !== null);
+
+			console.log('Decryption results:', { decryptSuccessCount, decryptFailCount, totalDecrypted: decrypted.length });
+
+			const existing = messagesByConversation[conversationId] || [];
+			if (before) {
+				messagesByConversation[conversationId] = [...decrypted, ...existing];
+			} else {
+				messagesByConversation[conversationId] = decrypted;
+			}
+		} else {
+			console.log('Skipping decryption - no data or no secret key', {
+				hasData: !!res.data,
+				hasSecretKey: !!keysStore.secretKey
+			});
+		}
+		loading = false;
+	}
+
+	function addMessage(conversationId: string, msg: DecryptedMessageItem): void {
+		const existing = messagesByConversation[conversationId] || [];
+		messagesByConversation[conversationId] = [...existing, msg];
+	}
+
+	function addPendingMessage(
+		conversationId: string,
+		tempId: string,
+		senderId: string,
+		content: string
+	): void {
+		addMessage(conversationId, {
+			id: tempId,
+			conversationId,
+			senderId,
+			content,
+			createdAt: new Date().toISOString(),
+			pending: true,
+			tempId,
+		});
+	}
+
+	function confirmMessage(tempId: string, realMessage: DecryptedMessageItem): void {
+		for (const convId of Object.keys(messagesByConversation)) {
+			messagesByConversation[convId] = messagesByConversation[convId].map((m) =>
+				m.tempId === tempId ? { ...realMessage, pending: false } : m
+			);
+		}
+	}
+
+	function receiveMessage(
+		msg: EncryptedMessage,
+		peerPublicKey: string
+	): DecryptedMessageItem | null {
+		if (!keysStore.secretKey) return null;
+		const content = decryptFromString(msg.encrypted_content, peerPublicKey, keysStore.secretKey);
+		if (!content) return null;
+		const decrypted: DecryptedMessageItem = {
+			id: msg.id,
+			conversationId: msg.conversation_id,
+			senderId: msg.sender_id,
+			content,
+			createdAt: msg.created_at,
+			deliveredAt: msg.delivered_at,
+			readAt: msg.read_at,
+		};
+		addMessage(msg.conversation_id, decrypted);
+		return decrypted;
+	}
+
+	function getMessages(conversationId: string): DecryptedMessageItem[] {
+		return messagesByConversation[conversationId] || [];
+	}
+
+	function clear(): void {
+		messagesByConversation = {};
+	}
+
+	return {
+		get messagesByConversation() {
+			return messagesByConversation;
+		},
+		get loading() {
+			return loading;
+		},
+		loadMessages,
+		addMessage,
+		addPendingMessage,
+		confirmMessage,
+		receiveMessage,
+		getMessages,
+		clear,
+	};
+}
+
+export const messagesStore = createMessagesStore();

@@ -1,0 +1,45 @@
+# Certificates
+certs/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+backend/.env
+
+# Binary files
+backend/bin/
+backend/link-server
+*.exe
+
+# Node
+node_modules/
+dist/
+.svelte-kit/
+
+# Go
+*.exe
+*.dll
+*.so
+*.dylib
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test
+test-results/
+playwright-report/
+
+# Logs
+*.log
+
+# Temp
+*.tmp
+/tmp/

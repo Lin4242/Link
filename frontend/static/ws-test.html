@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Test</title>
+    <style>
+        body { font-family: monospace; padding: 20px; }
+        #log { background: #111; color: #0f0; padding: 10px; height: 400px; overflow-y: auto; }
+        input, button { margin: 5px; padding: 8px; }
+        .error { color: red; }
+        .sent { color: yellow; }
+        .received { color: cyan; }
+    </style>
+</head>
+<body>
+    <h1>WebSocket Test</h1>
+    <div>
+        <input type="text" id="token" placeholder="JWT Token" style="width: 400px;">
+        <button onclick="connect()">Connect</button>
+        <button onclick="disconnect()">Disconnect</button>
+    </div>
+    <div>
+        <input type="text" id="toUser" placeholder="To User ID" style="width: 300px;">
+        <input type="text" id="message" placeholder="Message" style="width: 200px;">
+        <button onclick="sendMessage()">Send Message</button>
+    </div>
+    <div id="log"></div>
+
+    <script>
+        let ws = null;
+        const logDiv = document.getElementById('log');
+
+        function log(msg, className = '') {
+            const time = new Date().toLocaleTimeString();
+            const div = document.createElement('div');
+            div.className = className;
+            div.textContent = `[${time}] ${msg}`;
+            logDiv.appendChild(div);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function connect() {
+            const token = document.getElementById('token').value;
+            if (!token) {
+                log('Please enter a token', 'error');
+                return;
+            }
+
+            const wsUrl = `wss://${location.hostname}:9443/ws?token=${token}`;
+            log(`Connecting to ${wsUrl.substring(0, 50)}...`);
+
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = () => {
+                log('Connected!', 'received');
+            };
+
+            ws.onmessage = (event) => {
+                log(`RECEIVED: ${event.data}`, 'received');
+                try {
+                    const msg = JSON.parse(event.data);
+                    log(`  Type: ${msg.t}`, 'received');
+                    if (msg.t === 'delivered') {
+                        log(`  temp_id: ${msg.p?.temp_id}`, 'received');
+                        log(`  message.id: ${msg.p?.message?.id}`, 'received');
+                    }
+                } catch (e) {
+                    log(`  Parse error: ${e}`, 'error');
+                }
+            };
+
+            ws.onerror = (event) => {
+                log(`Error: ${JSON.stringify(event)}`, 'error');
+            };
+
+            ws.onclose = (event) => {
+                log(`Disconnected: code=${event.code} reason=${event.reason}`, 'error');
+            };
+        }
+
+        function disconnect() {
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+        }
+
+        function sendMessage() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                log('Not connected', 'error');
+                return;
+            }
+
+            const to = document.getElementById('toUser').value;
+            const message = document.getElementById('message').value;
+            const tempId = 'test-' + Date.now();
+
+            const msg = {
+                t: 'msg',
+                p: {
+                    to: to,
+                    encrypted_content: JSON.stringify({nonce: 'test', ciphertext: message}),
+                    temp_id: tempId
+                }
+            };
+
+            log(`SENDING: ${JSON.stringify(msg)}`, 'sent');
+            ws.send(JSON.stringify(msg));
+        }
+
+        // Pre-fill test user ID
+        document.getElementById('toUser').value = 'fcf454d3-d34a-4765-bc75-e9c3aa4bd9c3';
+    </script>
+</body>
+</html>
