@@ -1,4 +1,4 @@
-import { get } from './client';
+import { get, del } from './client';
 import type { User, Message } from '$lib/types';
 
 export interface ConversationWithPeer {
@@ -21,4 +21,8 @@ export async function getMessages(conversationId: string, limit = 50, before?: s
 		url += `&before=${encodeURIComponent(before)}`;
 	}
 	return get<Message[]>(url);
+}
+
+export async function deleteMessage(messageId: string) {
+	return del<{ id: string; conversation_id: string }>(`/messages/${messageId}`);
 }

@@ -54,6 +54,24 @@ func (s *MessageService) GetMessages(ctx context.Context, userID, conversationID
 	return s.msgRepo.FindByConversation(ctx, conversationID, limit, before)
 }
 
+func (s *MessageService) Delete(ctx context.Context, userID, messageID string) (*domain.Message, error) {
+	msg, err := s.msgRepo.FindByID(ctx, messageID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Only sender can delete
+	if msg.SenderID != userID {
+		return nil, domain.ErrUnauthorized("only sender can delete message")
+	}
+
+	if err := s.msgRepo.Delete(ctx, messageID); err != nil {
+		return nil, err
+	}
+
+	return msg, nil
+}
+
 func (s *MessageService) MarkDelivered(ctx context.Context, messageID string) error {
 	return s.msgRepo.MarkDelivered(ctx, messageID)
 }

@@ -89,6 +89,7 @@ function createTransportStore() {
 	let onlineHandler: ((userId: string) => void) | null = null;
 	let offlineHandler: ((userId: string) => void) | null = null;
 	let deliveredHandler: ((tempId: string, msg: EncryptedMessage) => void) | null = null;
+	let deletedHandler: ((messageId: string, conversationId: string) => void) | null = null;
 
 	function attachHandlers() {
 		if (transport) {
@@ -97,6 +98,7 @@ function createTransportStore() {
 			if (onlineHandler) transport.onOnline = onlineHandler;
 			if (offlineHandler) transport.onOffline = offlineHandler;
 			if (deliveredHandler) transport.onDelivered = deliveredHandler;
+			if (deletedHandler) transport.onDeleted = deletedHandler;
 		}
 	}
 
@@ -137,6 +139,13 @@ function createTransportStore() {
 		}
 	}
 
+	function onDeleted(handler: (messageId: string, conversationId: string) => void): void {
+		deletedHandler = handler;
+		if (transport) {
+			transport.onDeleted = handler;
+		}
+	}
+
 	async function sendMessage(to: string, encryptedContent: string, tempId: string): Promise<void> {
 		await transport?.sendMessage(to, encryptedContent, tempId);
 	}
@@ -169,6 +178,7 @@ function createTransportStore() {
 		onOnline,
 		onOffline,
 		onDelivered,
+		onDeleted,
 		sendMessage,
 		sendTyping,
 		sendRead,

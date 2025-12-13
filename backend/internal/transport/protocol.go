@@ -3,6 +3,7 @@ package transport
 const (
 	TypeMessage   = "msg"
 	TypeDelivered = "delivered"
+	TypeDeleted   = "deleted"
 	TypeTyping    = "typing"
 	TypeRead      = "read"
 	TypeOnline    = "online"

@@ -18,6 +18,8 @@ type Message struct {
 type MessageRepository interface {
 	Create(ctx context.Context, msg *Message) error
 	FindByConversation(ctx context.Context, convID string, limit int, before *time.Time) ([]*Message, error)
+	FindByID(ctx context.Context, id string) (*Message, error)
+	Delete(ctx context.Context, id string) error
 	MarkDelivered(ctx context.Context, id string) error
 	MarkRead(ctx context.Context, id string) error
 }

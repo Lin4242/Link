@@ -133,6 +133,10 @@
 				conversationsStore.updateLastMessage(msg.conversation_id, msg.created_at);
 			}
 		});
+
+		transportStore.onDeleted((messageId: string, conversationId: string) => {
+			messagesStore.removeMessage(conversationId, messageId);
+		});
 	}
 
 	async function selectConversation(id: string) {
@@ -226,13 +230,15 @@
 
 <!-- Privacy screen - 隱私保護遮罩 -->
 {#if privacyScreen}
-<div class="fixed inset-0 bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center z-[100]">
+<div class="fixed inset-0 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center z-[100]">
 	<div class="text-center text-white w-full max-w-xs px-6">
-		<svg class="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-		</svg>
-		<h2 class="text-2xl font-bold mb-1">LINK</h2>
-		<p class="text-blue-200 text-sm mb-6">端對端加密通訊</p>
+		<div class="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-sky-400 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/30">
+			<svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+			</svg>
+		</div>
+		<h2 class="text-2xl font-bold mb-1 tracking-tight">LINK</h2>
+		<p class="text-slate-400 text-sm mb-6">端對端加密通訊</p>
 		<form onsubmit={async (e) => {
 			e.preventDefault();
 			const form = e.target as HTMLFormElement;
@@ -250,9 +256,9 @@
 				type="password"
 				name="privacyPwd"
 				placeholder="輸入密碼解鎖"
-				class="w-full px-4 py-3 rounded-lg bg-white/20 text-white placeholder-blue-200 border border-white/30 focus:outline-none focus:ring-2 focus:ring-white/50 mb-3"
+				class="w-full px-4 py-3 rounded-xl bg-slate-700/50 text-white placeholder-slate-500 border border-white/10 focus:outline-none focus:ring-2 focus:ring-blue-500/50 mb-3"
 			/>
-			<button type="submit" class="w-full py-3 bg-white text-blue-600 font-medium rounded-lg">
+			<button type="submit" class="w-full py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-medium rounded-xl shadow-lg shadow-blue-500/20">
 				解鎖
 			</button>
 		</form>
@@ -262,10 +268,10 @@
 
 <!-- Key unlock modal -->
 {#if transportStore.connected && !keysStore.secretKey}
-<div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-	<div class="bg-white rounded-lg p-6 max-w-sm w-full">
-		<h2 class="text-lg font-bold mb-4">解鎖加密金鑰</h2>
-		<p class="text-sm text-gray-600 mb-4">請輸入密碼來解鎖您的加密金鑰。如果密碼錯誤，將產生新的金鑰。</p>
+<div class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+	<div class="bg-slate-800 rounded-2xl p-6 max-w-sm w-full border border-white/10 shadow-xl">
+		<h2 class="text-lg font-bold text-white mb-2">解鎖加密金鑰</h2>
+		<p class="text-sm text-slate-400 mb-5">請輸入密碼來解鎖您的加密金鑰</p>
 		<form onsubmit={async (e) => {
 			e.preventDefault();
 			const form = e.target as HTMLFormElement;
@@ -309,38 +315,35 @@
 				type="password"
 				name="unlockPwd"
 				placeholder="輸入密碼"
-				class="w-full px-4 py-2 border rounded-lg mb-4"
+				class="w-full px-4 py-3 bg-slate-700/50 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 mb-4"
 				autofocus
 			/>
-			<button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg">
-				解鎖 / 產生金鑰
+			<button type="submit" class="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 rounded-xl font-medium shadow-lg shadow-blue-500/20">
+				解鎖
 			</button>
 		</form>
 	</div>
 </div>
 {/if}
 
-<div class="h-[100dvh] flex bg-gray-100 overflow-hidden {!transportStore.connected ? 'pt-8' : ''}">
+<div class="h-[100dvh] flex bg-slate-900 overflow-hidden {!transportStore.connected ? 'pt-8' : ''}">
 	<!-- Sidebar -->
-	<div class="w-full md:w-80 bg-white border-r flex flex-col flex-shrink-0 {activeConversation ? 'hidden md:flex' : 'flex'}">
+	<div class="w-full md:w-80 bg-slate-800 border-r border-white/5 flex flex-col flex-shrink-0 {activeConversation ? 'hidden md:flex' : 'flex'}">
 		<!-- Header -->
-		<div class="p-4 border-b flex items-center justify-between">
+		<div class="p-4 border-b border-white/5 flex items-center justify-between">
 			<div class="flex items-center gap-3">
-				<div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-medium">
+				<div class="w-10 h-10 bg-gradient-to-br from-sky-400 to-blue-600 rounded-xl flex items-center justify-center text-white font-medium shadow-lg shadow-blue-500/20">
 					{authStore.user?.nickname?.[0] || '?'}
 				</div>
 				<div>
-					<p class="font-medium">{authStore.user?.nickname}</p>
-					<p class="text-xs text-gray-500 flex items-center gap-1">
-						<span class="w-2 h-2 rounded-full {transportStore.connected ? 'bg-green-500' : 'bg-red-500'}"></span>
+					<p class="font-medium text-white">{authStore.user?.nickname}</p>
+					<p class="text-xs text-slate-400 flex items-center gap-1.5">
+						<span class="w-2 h-2 rounded-full {transportStore.connected ? 'bg-emerald-500' : 'bg-red-500'}"></span>
 						{transportStore.connected ? '已連線' : '離線'}
-						{#if transportStore.transportType === 'webtransport'}
-							<span class="text-blue-500">(WT)</span>
-						{/if}
 					</p>
 				</div>
 			</div>
-			<button onclick={logout} class="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg" title="登出">
+			<button onclick={logout} class="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors" title="登出">
 				<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
 				</svg>
@@ -350,44 +353,44 @@
 		<!-- Conversation List -->
 		<div class="flex-1 overflow-y-auto">
 			{#if conversationsStore.loading}
-				<div class="p-4 text-center text-gray-500">載入中...</div>
+				<div class="p-4 text-center text-slate-500">載入中...</div>
 			{:else if conversationsStore.conversations.length === 0}
-				<div class="p-4 text-center text-gray-500">
-					<p class="mb-2">還沒有對話</p>
-					<p class="text-sm">新增好友開始聊天</p>
+				<div class="p-8 text-center text-slate-500">
+					<p class="mb-1">還沒有對話</p>
+					<p class="text-sm text-slate-600">新增好友開始聊天</p>
 				</div>
 			{:else}
 				{#each conversationsStore.conversations as conv}
 					<button
 						onclick={() => selectConversation(conv.id)}
-						class="w-full p-4 flex items-center gap-3 hover:bg-gray-50 transition-colors border-b
-							{conversationsStore.activeConversationId === conv.id ? 'bg-blue-50' : ''}"
+						class="w-full p-4 flex items-center gap-3 hover:bg-white/5 transition-colors border-b border-white/5
+							{conversationsStore.activeConversationId === conv.id ? 'bg-blue-500/10' : ''}"
 					>
 						<div class="relative">
-							<div class="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center text-lg font-medium">
+							<div class="w-12 h-12 bg-slate-700 rounded-xl flex items-center justify-center text-lg font-medium text-white">
 								{conv.peer.nickname[0]}
 							</div>
 							{#if friendsStore.friends.find((f) => f.id === conv.peer.id)?.isOnline}
-								<div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
+								<div class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-slate-800 rounded-full"></div>
 							{/if}
 						</div>
 						<div class="flex-1 text-left min-w-0">
 							<div class="flex items-center justify-between">
-								<p class="font-medium truncate">{conv.peer.nickname}</p>
+								<p class="font-medium text-white truncate">{conv.peer.nickname}</p>
 								{#if conv.lastMessageAt}
-									<span class="text-xs text-gray-500">{formatTime(conv.lastMessageAt)}</span>
+									<span class="text-xs text-slate-500">{formatTime(conv.lastMessageAt)}</span>
 								{/if}
 							</div>
-							<div class="flex items-center justify-between">
-								<p class="text-sm text-gray-500 truncate">
+							<div class="flex items-center justify-between mt-0.5">
+								<p class="text-sm text-slate-500 truncate">
 									{#if typingUsers[conv.peer.id]}
-										<span class="text-blue-500">正在輸入...</span>
+										<span class="text-blue-400">正在輸入...</span>
 									{:else}
 										點擊開始聊天
 									{/if}
 								</p>
 								{#if conv.unreadCount > 0}
-									<span class="bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full min-w-[20px] text-center">
+									<span class="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full min-w-[20px] text-center font-medium">
 										{conv.unreadCount > 99 ? '99+' : conv.unreadCount}
 									</span>
 								{/if}
@@ -400,8 +403,8 @@
 
 		<!-- Pending Requests -->
 		{#if friendsStore.pendingRequests.length > 0}
-			<div class="border-t p-2">
-				<p class="text-xs text-gray-500 px-2 mb-1">好友請求 ({friendsStore.pendingRequests.length})</p>
+			<div class="border-t border-white/5 p-3">
+				<p class="text-xs text-slate-500 px-2">好友請求 ({friendsStore.pendingRequests.length})</p>
 			</div>
 		{/if}
 	</div>
@@ -409,39 +412,41 @@
 	<!-- Main Chat Area -->
 	<div class="flex-1 flex flex-col min-w-0 {activeConversation ? 'flex' : 'hidden md:flex'}">
 		{#if !activeConversation}
-			<div class="flex-1 flex items-center justify-center text-gray-500">
+			<div class="flex-1 flex items-center justify-center">
 				<div class="text-center">
-					<svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-					</svg>
-					<p>選擇一個對話開始聊天</p>
+					<div class="w-16 h-16 mx-auto mb-4 bg-slate-800 rounded-2xl flex items-center justify-center">
+						<svg class="w-8 h-8 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+						</svg>
+					</div>
+					<p class="text-slate-500">選擇一個對話開始聊天</p>
 				</div>
 			</div>
 		{:else}
 			<!-- Chat Header -->
-			<div class="p-4 border-b bg-white flex items-center gap-3">
+			<div class="p-4 border-b border-white/5 bg-slate-800 flex items-center gap-3">
 				<!-- Back button for mobile -->
 				<button
 					onclick={() => conversationsStore.setActive(null)}
-					class="md:hidden p-2 -ml-2 text-gray-500 hover:text-gray-700"
+					class="md:hidden p-2 -ml-2 text-slate-400 hover:text-white"
 				>
 					<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
 					</svg>
 				</button>
 				<div class="relative">
-					<div class="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center font-medium">
+					<div class="w-10 h-10 bg-slate-700 rounded-xl flex items-center justify-center font-medium text-white">
 						{activeConversation.peer.nickname[0]}
 					</div>
 					{#if friendsStore.friends.find((f) => f.id === activeConversation.peer.id)?.isOnline}
-						<div class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full"></div>
+						<div class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 border-slate-800 rounded-full"></div>
 					{/if}
 				</div>
 				<div>
-					<p class="font-medium">{activeConversation.peer.nickname}</p>
-					<p class="text-xs text-gray-500">
+					<p class="font-medium text-white">{activeConversation.peer.nickname}</p>
+					<p class="text-xs text-slate-500">
 						{#if isTyping}
-							<span class="text-blue-500">正在輸入...</span>
+							<span class="text-blue-400">正在輸入...</span>
 						{:else if friendsStore.friends.find((f) => f.id === activeConversation.peer.id)?.isOnline}
 							在線上
 						{:else}
@@ -449,70 +454,86 @@
 						{/if}
 					</p>
 				</div>
-				<div class="ml-auto flex items-center gap-1 text-xs text-gray-400">
-					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+				<div class="ml-auto flex items-center gap-1.5 text-xs text-slate-500">
+					<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
 					</svg>
-					端對端加密
+					加密中
 				</div>
 			</div>
 
 			<!-- Messages -->
-			<div bind:this={messagesContainer} class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+			<div bind:this={messagesContainer} class="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-900">
 				{#if messagesStore.loading}
-					<div class="text-center text-gray-500">載入訊息中...</div>
+					<div class="text-center text-slate-500 py-4">載入訊息中...</div>
 				{:else if messages.length === 0}
-					<div class="text-center text-gray-500 py-8">
-						<svg class="w-12 h-12 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-						</svg>
-						<p class="text-sm">訊息已加密保護</p>
-						<p class="text-xs">發送第一則訊息開始聊天</p>
+					<div class="text-center py-12">
+						<div class="w-14 h-14 mx-auto mb-3 bg-slate-800 rounded-xl flex items-center justify-center">
+							<svg class="w-7 h-7 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+							</svg>
+						</div>
+						<p class="text-slate-500 text-sm">訊息已加密保護</p>
+						<p class="text-slate-600 text-xs mt-1">發送第一則訊息開始聊天</p>
 					</div>
 				{:else}
 					{#each messages as msg}
 						{@const isOwn = msg.senderId === authStore.user?.id}
 						<div class="flex {isOwn ? 'justify-end' : 'justify-start'}">
-							<div class="max-w-[70%] {isOwn ? 'bg-blue-600 text-white' : 'bg-white'} rounded-2xl px-4 py-2 shadow-sm
-								{msg.pending ? 'opacity-70' : ''}">
-								<p class="break-words whitespace-pre-wrap">{msg.content}</p>
-								<p class="text-xs {isOwn ? 'text-blue-200' : 'text-gray-400'} mt-1 text-right">
+							<button
+								type="button"
+								onclick={async () => {
+									console.log('Message clicked!', { isOwn, pending: msg.pending, hasConv: !!activeConversation, msgId: msg.id });
+									if (isOwn && !msg.pending && activeConversation) {
+										console.log('Deleting message:', msg.id);
+										const result = await messagesStore.deleteMessage(activeConversation.id, msg.id);
+										console.log('Delete result:', result);
+									} else {
+										console.log('Cannot delete:', { isOwn, pending: msg.pending, hasConv: !!activeConversation });
+									}
+								}}
+								class="max-w-[75%] {isOwn ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white' : 'bg-slate-800 text-white'} rounded-2xl px-4 py-2.5 shadow-lg text-left
+									{msg.pending ? 'opacity-60' : ''} {isOwn ? 'shadow-blue-500/10 hover:from-blue-600 hover:to-blue-700 active:scale-95' : 'shadow-black/20'} transition-all"
+								disabled={!isOwn || msg.pending}
+							>
+								<p class="break-words whitespace-pre-wrap text-sm">{msg.content}</p>
+								<p class="text-xs {isOwn ? 'text-blue-200' : 'text-slate-500'} mt-1 text-right">
 									{formatTime(msg.createdAt)}
 									{#if isOwn && msg.pending}
-										<span class="ml-1">發送中</span>
+										<span class="ml-1">...</span>
 									{/if}
 								</p>
-							</div>
+							</button>
 						</div>
 					{/each}
 				{/if}
 			</div>
 
 			<!-- Message Input -->
-			<div class="p-4 bg-white border-t">
+			<div class="p-4 bg-slate-800 border-t border-white/5">
 				{#if !transportStore.connected}
-					<div class="text-center text-sm text-yellow-600 mb-2">
+					<div class="text-center text-sm text-amber-400/80 mb-3">
 						未連線 - 訊息功能暫時無法使用
 					</div>
 				{:else if !keysStore.secretKey}
-					<div class="text-center text-sm text-yellow-600 mb-2">
-						加密金鑰未載入 - 需要 HTTPS 環境
+					<div class="text-center text-sm text-amber-400/80 mb-3">
+						加密金鑰未載入
 					</div>
 				{/if}
-				<form onsubmit={(e) => { e.preventDefault(); sendMessage(); }} class="flex gap-2">
+				<form onsubmit={(e) => { e.preventDefault(); sendMessage(); }} class="flex gap-3">
 					<input
 						type="text"
 						bind:value={messageInput}
 						onkeydown={handleKeydown}
 						oninput={handleTyping}
 						placeholder="輸入訊息..."
-						class="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+						class="flex-1 px-4 py-3 bg-slate-700/50 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
 						disabled={sending}
 					/>
 					<button
 						type="submit"
 						disabled={!messageInput.trim() || sending || !transportStore.connected || !keysStore.secretKey}
-						class="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+						class="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl flex items-center justify-center hover:from-blue-600 hover:to-blue-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-blue-500/20"
 						aria-label="發送訊息"
 					>
 						<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -2,6 +2,7 @@ import type { EncryptedMessage } from '$lib/types';
 import { conversationsApi } from '$lib/api';
 import { decryptFromString } from '$lib/crypto';
 import { keysStore } from './keys.svelte';
+import { deleteMessage as deleteMessageApi } from '$lib/api/conversations';
 
 export interface DecryptedMessageItem {
 	id: string;
@@ -142,6 +143,24 @@ function createMessagesStore() {
 		messagesByConversation = {};
 	}
 
+	async function deleteMessage(conversationId: string, messageId: string): Promise<boolean> {
+		const res = await deleteMessageApi(messageId);
+		if (res.error) {
+			console.error('Failed to delete message:', res.error);
+			return false;
+		}
+		// Remove from local store
+		removeMessage(conversationId, messageId);
+		return true;
+	}
+
+	function removeMessage(conversationId: string, messageId: string): void {
+		const existing = messagesByConversation[conversationId];
+		if (existing) {
+			messagesByConversation[conversationId] = existing.filter((m) => m.id !== messageId);
+		}
+	}
+
 	return {
 		get messagesByConversation() {
 			return messagesByConversation;
@@ -155,6 +174,8 @@ function createMessagesStore() {
 		confirmMessage,
 		receiveMessage,
 		getMessages,
+		deleteMessage,
+		removeMessage,
 		clear,
 	};
 }

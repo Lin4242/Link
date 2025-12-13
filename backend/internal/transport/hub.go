@@ -60,6 +60,11 @@ func (h *Hub) Send(userID string, msg *Message) bool {
 	return c.SendStream(msg)
 }
 
+// SendTyped implements the Notifier interface for HTTP handlers
+func (h *Hub) SendTyped(userID string, msgType string, payload interface{}) bool {
+	return h.Send(userID, &Message{Type: msgType, Payload: payload})
+}
+
 func (h *Hub) SendDatagram(userID string, msg *Message) bool {
 	h.mu.RLock()
 	c, ok := h.clients[userID]

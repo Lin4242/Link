@@ -77,6 +77,27 @@ func (r *MessageRepository) FindByConversation(ctx context.Context, convID strin
 	return messages, rows.Err()
 }
 
+func (r *MessageRepository) FindByID(ctx context.Context, id string) (*domain.Message, error) {
+	query := `
+		SELECT id, conversation_id, sender_id, encrypted_content, created_at, delivered_at, read_at
+		FROM messages WHERE id = $1
+	`
+	m := &domain.Message{}
+	err := r.pool.QueryRow(ctx, query, id).Scan(
+		&m.ID, &m.ConversationID, &m.SenderID, &m.EncryptedContent,
+		&m.CreatedAt, &m.DeliveredAt, &m.ReadAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (r *MessageRepository) Delete(ctx context.Context, id string) error {
+	_, err := r.pool.Exec(ctx, `DELETE FROM messages WHERE id = $1`, id)
+	return err
+}
+
 func (r *MessageRepository) MarkDelivered(ctx context.Context, id string) error {
 	_, err := r.pool.Exec(ctx,
 		`UPDATE messages SET delivered_at = NOW() WHERE id = $1 AND delivered_at IS NULL`,

@@ -87,6 +87,7 @@ export interface ITransport {
 	onOnline: ((userId: string) => void) | null;
 	onOffline: ((userId: string) => void) | null;
 	onDelivered: ((tempId: string, msg: EncryptedMessage) => void) | null;
+	onDeleted: ((messageId: string, conversationId: string) => void) | null;
 	onConnected: ((connected: boolean) => void) | null;
 }
 

@@ -20,6 +20,7 @@ export function createWebSocketTransport(config: WebSocketConfig): ITransport {
 		onOnline: null,
 		onOffline: null,
 		onDelivered: null,
+		onDeleted: null,
 		onConnected: null,
 
 		async connect(): Promise<void> {
@@ -143,6 +144,11 @@ export function createWebSocketTransport(config: WebSocketConfig): ITransport {
 				} else {
 					console.error('NO onDelivered handler! Message will be lost!');
 				}
+				break;
+			}
+			case 'deleted': {
+				const delp = msg.p as { id: string; conversation_id: string };
+				transport.onDeleted?.(delp.id, delp.conversation_id);
 				break;
 			}
 		}

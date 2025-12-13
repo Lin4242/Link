@@ -52,6 +52,7 @@ func Setup(app *fiber.App, h *Handlers, authMw fiber.Handler) {
 
 	auth.Get("/conversations", h.Conv.List)
 	auth.Get("/conversations/:id/messages", h.Conv.Messages)
+	auth.Delete("/messages/:messageId", h.Conv.DeleteMessage)
 
 	auth.Post("/auth/logout", h.Auth.Logout)
 }

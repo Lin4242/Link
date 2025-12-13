@@ -29,6 +29,7 @@ export function createWebTransportClient(config: WebTransportConfig): ITransport
 		onOnline: null,
 		onOffline: null,
 		onDelivered: null,
+		onDeleted: null,
 		onConnected: null,
 
 		async connect(): Promise<void> {
@@ -164,6 +165,11 @@ export function createWebTransportClient(config: WebTransportConfig): ITransport
 			case 'delivered': {
 				const dp = msg.p as { temp_id: string; message: EncryptedMessage };
 				transport.onDelivered?.(dp.temp_id, dp.message);
+				break;
+			}
+			case 'deleted': {
+				const delp = msg.p as { id: string; conversation_id: string };
+				transport.onDeleted?.(delp.id, delp.conversation_id);
 				break;
 			}
 		}
