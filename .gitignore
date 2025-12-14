@@ -6,6 +6,11 @@ certs/
 .env.local
 .env.*.local
 backend/.env
+.env.production
+.env.production.local
+secrets.md
+PASSWORDS.txt
+credentials/
 
 # Binary files
 backend/bin/
