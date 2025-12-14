@@ -129,13 +129,12 @@
 			}
 
 			authStore.login(res.data.user, res.data.token);
-			
-			// Redirect to fix-keys if no key was loaded
+
+			// Always go to chat - it will handle key unlock/regeneration
 			if (!keyLoaded) {
-				goto('/fix-keys');
-			} else {
-				goto('/chat');
+				console.warn('⚠️ No secret key found - chat page will prompt for key setup');
 			}
+			goto('/chat');
 		}
 	}
 </script>

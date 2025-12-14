@@ -145,12 +145,11 @@
 
 			authStore.login(res.data.user, res.data.token);
 			
-			// If key storage failed, redirect to fix-keys page
+			// Always go to chat - it will handle key unlock/regeneration
 			if (!keyStored) {
-				window.location.replace('/fix-keys');
-			} else {
-				window.location.replace('/chat');
+				console.warn('⚠️ Key storage failed - chat page will prompt for key setup');
 			}
+			window.location.replace('/chat');
 		}
 	}
 </script>
