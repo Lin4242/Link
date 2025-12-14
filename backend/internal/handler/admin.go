@@ -100,9 +100,9 @@ func (h *AdminHandler) ListCardPairs(c *fiber.Ctx) error {
 			cp.primary_token, 
 			cp.backup_token, 
 			cp.created_at,
-			CASE WHEN u.id IS NOT NULL THEN true ELSE false END as is_activated
+			CASE WHEN c.id IS NOT NULL THEN true ELSE false END as is_activated
 		FROM card_pairs cp
-		LEFT JOIN users u ON u.card_token = cp.primary_token
+		LEFT JOIN cards c ON c.card_token = cp.primary_token AND c.card_type = 'primary' AND c.status = 'active'
 		WHERE cp.expires_at > NOW() 
 		ORDER BY cp.created_at DESC
 	`)
