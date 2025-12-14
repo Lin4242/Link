@@ -78,20 +78,64 @@
 		}
 
 		if (res.data) {
-			// Try to load secret key (may fail on HTTP or if key wasn't saved)
+			// Try to load secret key from multiple sources
+			let keyLoaded = false;
+			
+			// 1. Try IndexedDB first
 			try {
 				const secretKey = await loadSecretKey(password);
 				if (secretKey) {
 					await keysStore.unlock(password);
-				} else {
-					console.warn('No secret key found - E2E encryption disabled');
+					keyLoaded = true;
+					console.log('✅ Secret key loaded from IndexedDB');
 				}
 			} catch (e) {
-				console.warn('Failed to load secret key (requires HTTPS):', e);
+				console.warn('Failed to load from IndexedDB:', e);
+			}
+			
+			// 2. Try temporary storage if IndexedDB failed
+			if (!keyLoaded) {
+				try {
+					// Check sessionStorage first
+					let tempKey = sessionStorage.getItem('temp_secret_key');
+					// Then check localStorage with user ID
+					if (!tempKey && res.data.user.id) {
+						tempKey = localStorage.getItem(`temp_key_${res.data.user.id}`);
+					}
+					
+					if (tempKey) {
+						const keyArray = new Uint8Array(JSON.parse(tempKey));
+						keysStore.secretKey = keyArray;
+						keysStore.publicKey = res.data.user.public_key || '';
+						keyLoaded = true;
+						console.log('⚠️ Secret key loaded from temporary storage');
+						
+						// Try to persist it properly
+						try {
+							const { saveSecretKey } = await import('$lib/crypto');
+							await saveSecretKey(keyArray, password);
+							console.log('✅ Key migrated to IndexedDB');
+						} catch (saveErr) {
+							console.warn('Could not migrate key to IndexedDB:', saveErr);
+						}
+					}
+				} catch (e) {
+					console.warn('Failed to load from temporary storage:', e);
+				}
+			}
+			
+			if (!keyLoaded) {
+				console.warn('❌ No secret key found - redirecting to fix-keys');
 			}
 
 			authStore.login(res.data.user, res.data.token);
-			goto('/chat');
+			
+			// Redirect to fix-keys if no key was loaded
+			if (!keyLoaded) {
+				goto('/fix-keys');
+			} else {
+				goto('/chat');
+			}
 		}
 	}
 </script>

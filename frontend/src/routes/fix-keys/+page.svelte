@@ -18,6 +18,21 @@
 			return;
 		}
 		
+		// Check for temporary key in sessionStorage first
+		const tempKey = sessionStorage.getItem('temp_secret_key');
+		if (tempKey && !keysStore.secretKey) {
+			status = '🔄 找到臨時密鑰，嘗試恢復...';
+			try {
+				const keyArray = new Uint8Array(JSON.parse(tempKey));
+				// Store it properly in keysStore
+				keysStore.secretKey = keyArray;
+				keysStore.publicKey = authStore.user?.public_key || '';
+				status = '✅ 臨時密鑰已恢復';
+			} catch (e) {
+				console.error('Failed to restore temp key:', e);
+			}
+		}
+		
 		hasKey = !!keysStore.secretKey;
 		if (hasKey) {
 			status = '✅ 密鑰已載入';
@@ -52,12 +67,22 @@
 			
 			// Save the new key
 			status = '💾 儲存新密鑰...';
-			await saveSecretKey(secretKey, password);
+			try {
+				await saveSecretKey(secretKey, password);
+				status = '✅ 密鑰已儲存到 IndexedDB';
+			} catch (saveError) {
+				console.warn('Failed to save to IndexedDB, storing in sessionStorage:', saveError);
+				// Store in sessionStorage as fallback
+				sessionStorage.setItem('temp_secret_key', JSON.stringify(Array.from(secretKey)));
+				status = '⚠️ 密鑰儲存到臨時存儲（需要 HTTPS 才能永久儲存）';
+			}
 			
-			// Update user's public key in backend by re-registering
-			status = '📡 更新公鑰（使用重新註冊方式）...';
-			// For now, just save locally - backend update would need a new endpoint
+			// Update user's public key in backend
+			status = '📡 更新公鑰到伺服器...';
+			// TODO: Need backend endpoint to update public key
+			// For now, just log it
 			console.log('Generated new keypair, public key:', publicKey);
+			console.log('User should re-register with this public key to enable E2E encryption');
 			
 			// Load the new key into store
 			await keysStore.unlock(password);
@@ -122,6 +147,7 @@
 			<div class="mt-6 text-xs text-slate-500 text-center">
 				<p>此工具會嘗試載入或重新生成你的加密密鑰</p>
 				<p>如果密鑰遺失，之前的訊息將無法解密</p>
+				<p class="mt-2 text-amber-400">⚠️ 注意：新生成的密鑰需要重新註冊才能完全生效</p>
 			</div>
 		</div>
 	</div>

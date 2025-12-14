@@ -124,16 +124,33 @@
 			localStorage.removeItem('register_paired_token');
 
 			// Try to save secret key (may fail on non-HTTPS)
+			let keyStored = false;
 			try {
 				await saveSecretKey(keyPair.secretKey, password);
+				keyStored = true;
+				console.log('✅ Secret key saved to IndexedDB');
 			} catch (e) {
-				console.warn('Failed to save secret key (requires HTTPS):', e);
-				// Store temporarily in sessionStorage for this session
-				sessionStorage.setItem('temp_secret_key', JSON.stringify(Array.from(keyPair.secretKey)));
+				console.warn('Failed to save secret key to IndexedDB:', e);
+				// Store in both sessionStorage and localStorage for better persistence
+				try {
+					const keyData = JSON.stringify(Array.from(keyPair.secretKey));
+					sessionStorage.setItem('temp_secret_key', keyData);
+					localStorage.setItem(`temp_key_${res.data.user.id}`, keyData);
+					console.log('⚠️ Secret key saved to temporary storage');
+				} catch (storageError) {
+					console.error('Failed to save key to any storage:', storageError);
+					alert('⚠️ 警告：無法儲存加密密鑰。請確保使用 HTTPS 連線或聯絡管理員。');
+				}
 			}
 
 			authStore.login(res.data.user, res.data.token);
-			window.location.replace('/chat');
+			
+			// If key storage failed, redirect to fix-keys page
+			if (!keyStored) {
+				window.location.replace('/fix-keys');
+			} else {
+				window.location.replace('/chat');
+			}
 		}
 	}
 </script>
