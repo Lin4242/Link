@@ -1,14 +1,13 @@
 @import 'tailwindcss';
 
-/* Ensure full viewport height on mobile */
-html, body {
+/* Chat-specific styles should be applied via class */
+.chat-layout {
 	height: 100%;
 	overflow: hidden;
 	overscroll-behavior: none;
 }
 
-/* Prevent iOS Safari rubber-banding */
-body {
+.chat-layout body {
 	position: fixed;
 	width: 100%;
 }
