@@ -26,7 +26,15 @@ func Load() *Config {
 		panic("JWT_SECRET must be at least 32 characters")
 	}
 
-	cardSecret := getEnv("CARD_TOKEN_SECRET", "default-card-token-secret-change-me")
+	cardSecret := getEnv("CARD_TOKEN_SECRET", "")
+	if cardSecret == "" {
+		panic("CARD_TOKEN_SECRET is required")
+	}
+
+	adminPassword := getEnv("ADMIN_PASSWORD", "")
+	if adminPassword == "" {
+		panic("ADMIN_PASSWORD is required")
+	}
 
 	expiry, _ := time.ParseDuration(getEnv("JWT_EXPIRY", "24h"))
 	return &Config{
@@ -40,7 +48,7 @@ func Load() *Config {
 		TLSKey:          getEnv("TLS_KEY_FILE", "../certs/localhost+2-key.pem"),
 		CORSOrigins:     getEnv("CORS_ORIGINS", "https://localhost:5173"),
 		LogLevel:        getEnv("LOG_LEVEL", "info"),
-		AdminPassword:   getEnv("ADMIN_PASSWORD", "42424242"),
+		AdminPassword:   adminPassword,
 		BaseURL:         getEnv("BASE_URL", "https://localhost:5173"),
 	}
 }

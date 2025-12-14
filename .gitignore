@@ -5,7 +5,9 @@ certs/
 .env
 .env.local
 .env.*.local
+.env.seed
 backend/.env
+backend/.env.seed
 .env.production
 .env.production.local
 secrets.md

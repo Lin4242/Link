@@ -88,11 +88,38 @@ cd backend && make migrate-up
 
 ---
 
+## Seed Script (Demo 快速建立)
+
+當需要重頭 demo 或開發測試時，可用 seed script 快速建立資料：
+
+```bash
+cd backend
+
+# 1. 複製設定範例
+cp .env.seed.example .env.seed
+
+# 2. 編輯 .env.seed，填入 NFC 卡片 token
+#    SEED_DEMO_PRIMARY_TOKEN=你的主卡token
+#    SEED_DEMO_BACKUP_TOKEN=你的附卡token
+
+# 3. 執行 seed (會清空現有資料)
+source .env.seed && go run ./cmd/seed
+```
+
+**注意**:
+- `.env.seed` 包含敏感資料，已加入 `.gitignore`
+- NFC 卡片 token 需與燒錄到實體卡片的一致
+- Seed 會清空所有資料後重建 demo 用戶
+
+---
+
 ## 檔案結構重點
 
 ```
 backend/
-├── cmd/server/main.go              # 入口
+├── cmd/
+│   ├── server/main.go              # 應用程式入口
+│   └── seed/main.go                # Seed Script
 ├── internal/
 │   ├── pkg/password/argon2.go      # 密碼雜湊
 │   ├── pkg/token/jwt.go            # JWT 管理
