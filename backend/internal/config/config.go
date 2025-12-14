@@ -18,6 +18,7 @@ type Config struct {
 	LogLevel        string
 	AdminPassword   string
 	BaseURL         string
+	ServiceUserID   string // 小安服務帳號 ID，新用戶自動加為好友
 }
 
 func Load() *Config {
@@ -50,6 +51,7 @@ func Load() *Config {
 		LogLevel:        getEnv("LOG_LEVEL", "info"),
 		AdminPassword:   adminPassword,
 		BaseURL:         getEnv("BASE_URL", "https://localhost:5173"),
+		ServiceUserID:   getEnv("SERVICE_USER_ID", ""), // 可選，設定後新用戶自動加好友
 	}
 }
 

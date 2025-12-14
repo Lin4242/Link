@@ -57,7 +57,7 @@ func main() {
 
 	userSvc := service.NewUserService(userRepo)
 	cardSvc := service.NewCardService(cardRepo, sessionRepo, cardTokenGen)
-	authSvc := service.NewAuthService(userRepo, cardRepo, sessionRepo, tokenMgr, cardTokenGen)
+	authSvc := service.NewAuthService(userRepo, cardRepo, sessionRepo, friendRepo, tokenMgr, cardTokenGen, cfg.ServiceUserID)
 	friendSvc := service.NewFriendshipService(friendRepo, userRepo)
 	convSvc := service.NewConversationService(convRepo)
 	msgSvc := service.NewMessageService(msgRepo, convRepo)

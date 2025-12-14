@@ -10,11 +10,13 @@ import (
 )
 
 type AuthService struct {
-	userRepo    domain.UserRepository
-	cardRepo    domain.CardRepository
-	sessionRepo domain.SessionRepository
-	tokenMgr    *token.Manager
-	cardTokenGen *cardtoken.Generator
+	userRepo      domain.UserRepository
+	cardRepo      domain.CardRepository
+	sessionRepo   domain.SessionRepository
+	friendRepo    domain.FriendshipRepository
+	tokenMgr      *token.Manager
+	cardTokenGen  *cardtoken.Generator
+	serviceUserID string // 小安服務帳號 ID
 }
 
 type RegisterInput struct {
@@ -34,15 +36,19 @@ func NewAuthService(
 	userRepo domain.UserRepository,
 	cardRepo domain.CardRepository,
 	sessionRepo domain.SessionRepository,
+	friendRepo domain.FriendshipRepository,
 	tokenMgr *token.Manager,
 	cardTokenGen *cardtoken.Generator,
+	serviceUserID string,
 ) *AuthService {
 	return &AuthService{
-		userRepo:     userRepo,
-		cardRepo:     cardRepo,
-		sessionRepo:  sessionRepo,
-		tokenMgr:     tokenMgr,
-		cardTokenGen: cardTokenGen,
+		userRepo:      userRepo,
+		cardRepo:      cardRepo,
+		sessionRepo:   sessionRepo,
+		friendRepo:    friendRepo,
+		tokenMgr:      tokenMgr,
+		cardTokenGen:  cardTokenGen,
+		serviceUserID: serviceUserID,
 	}
 }
 
@@ -114,6 +120,17 @@ func (s *AuthService) Register(ctx context.Context, input RegisterInput) (*AuthR
 		if err := s.cardRepo.Create(ctx, backupCard); err != nil {
 			return nil, err
 		}
+	}
+
+	// Auto-friend with service user (小安) if configured
+	if s.serviceUserID != "" && s.serviceUserID != user.ID {
+		friendship := &domain.Friendship{
+			RequesterID: s.serviceUserID,
+			AddresseeID: user.ID,
+			Status:      domain.FriendshipAccepted,
+		}
+		// Ignore error - auto-friend is best-effort
+		_ = s.friendRepo.Create(ctx, friendship)
 	}
 
 	tokenStr, err := s.tokenMgr.Generate(user.ID)
