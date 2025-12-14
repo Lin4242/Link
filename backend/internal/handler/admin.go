@@ -104,7 +104,7 @@ func (h *AdminHandler) ListCardPairs(c *fiber.Ctx) error {
 		FROM card_pairs cp
 		LEFT JOIN cards c ON c.card_token = cp.primary_token AND c.card_type = 'primary' AND c.status = 'active'
 		WHERE cp.expires_at > NOW() 
-		ORDER BY cp.created_at DESC
+		ORDER BY cp.created_at ASC
 	`)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
