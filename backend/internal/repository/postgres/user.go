@@ -67,10 +67,10 @@ func (r *UserRepository) GetPublicKey(ctx context.Context, id string) (string, e
 
 func (r *UserRepository) Update(ctx context.Context, user *domain.User) error {
 	query := `
-		UPDATE users SET nickname = $2, avatar_url = $3, updated_at = NOW()
+		UPDATE users SET nickname = $2, avatar_url = $3, public_key = $4, updated_at = NOW()
 		WHERE id = $1
 	`
-	_, err := r.pool.Exec(ctx, query, user.ID, user.Nickname, user.AvatarURL)
+	_, err := r.pool.Exec(ctx, query, user.ID, user.Nickname, user.AvatarURL, user.PublicKey)
 	return err
 }
 

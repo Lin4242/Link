@@ -8,23 +8,32 @@
 ## 專案狀態 (2024-12-15)
 
 ### 當前狀態
-- **線上環境**: 已部署完成，可正常使用
-- **Seed 資料**: 已執行，小安 + Demo 卡片都已建立
+- **線上環境**: 已部署，前端有更新
+- **Seed 資料**: 小安 + 阿詠 + Demo 卡片
 - **自動加好友**: 新用戶註冊後自動與小安成為好友
+- **Playwright MCP**: 可用於自動化測試
 
 ### 已完成
 - [x] Seed script (`backend/cmd/seed/main.go`)
 - [x] 小安服務帳號 (可登入)
+- [x] 阿詠測試帳號 (可登入)
 - [x] Demo 卡片 (只有 card_pairs，未註冊，可走完整 demo)
 - [x] Auto-friend 功能 (SERVICE_USER_ID)
 - [x] NFC 跨 tab cookie 修復 (iPhone Safari)
 - [x] Admin 面板 (產生卡片 token)
+- [x] 好友列表 UI (沒對話時顯示好友，可點擊開始聊天)
+- [x] 解鎖邏輯簡化 (placeholder 自動更新，不匹配視為密碼錯誤)
+
+### 待修 Bug (優先順序)
+1. [ ] **即時推送失效** - 收訊方需 refresh 才看到新訊息
+2. [ ] **公鑰 placeholder 問題** - seed 應推導真正公鑰
+3. [ ] **環境檔分離** - 需要 .env.development / .env.production
 
 ### 待測試
 - [ ] 完整 NFC 註冊流程 (刷主卡 → 刷副卡 → 註冊)
-- [ ] 小安電腦端登入
-- [ ] 聊天功能 (E2EE 加解密)
-- [ ] 好友系統
+- [x] 小安電腦端登入 ✓
+- [ ] 聊天功能 (E2EE 加解密) - 發送成功，接收有問題
+- [x] 好友系統 ✓
 
 ---
 

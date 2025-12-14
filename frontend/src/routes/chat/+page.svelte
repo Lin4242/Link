@@ -96,21 +96,45 @@
 	});
 
 	function setupTransportHandlers() {
-		transportStore.onMessage((msg: EncryptedMessage) => {
+		transportStore.onMessage(async (msg: EncryptedMessage) => {
 			console.log('📨 Transport received message:', {
 				conversationId: msg.conversation_id,
 				senderId: msg.sender_id,
 				msgId: msg.id
 			});
-			
-			const conv = conversationsStore.conversations.find((c) => c.id === msg.conversation_id);
+
+			let conv = conversationsStore.conversations.find((c) => c.id === msg.conversation_id);
+
+			// 如果找不到對話，從好友列表創建新對話
+			if (!conv) {
+				console.log('Conversation not found, looking for sender in friends...');
+				const friend = friendsStore.friends.find((f) => f.id === msg.sender_id);
+				if (friend) {
+					console.log('Found sender in friends, creating conversation:', friend.user.nickname);
+					conversationsStore.addOrUpdate({
+						id: msg.conversation_id,
+						peer: friend.user,
+						unreadCount: 0,
+					});
+					conv = conversationsStore.conversations.find((c) => c.id === msg.conversation_id);
+				} else {
+					// 不是好友，重新載入好友和對話列表
+					console.log('Sender not in friends, reloading data...');
+					await Promise.all([
+						conversationsStore.loadConversations(),
+						friendsStore.loadFriends()
+					]);
+					conv = conversationsStore.conversations.find((c) => c.id === msg.conversation_id);
+				}
+			}
+
 			if (conv) {
-				console.log('Found conversation:', {
+				console.log('Processing message for conversation:', {
 					peerId: conv.peer.id,
 					peerNickname: conv.peer.nickname,
 					hasPeerPublicKey: !!conv.peer.public_key
 				});
-				
+
 				const decrypted = messagesStore.receiveMessage(msg, conv.peer.public_key);
 				if (decrypted) {
 					conversationsStore.updateLastMessage(msg.conversation_id, msg.created_at);
@@ -124,7 +148,7 @@
 					console.error('Failed to decrypt message in chat handler');
 				}
 			} else {
-				console.error('Conversation not found for message:', msg.conversation_id);
+				console.error('Still cannot find conversation after reload:', msg.conversation_id);
 			}
 		});
 
@@ -177,6 +201,24 @@
 			await messagesStore.loadMessages(id, conv.peer.public_key);
 			scrollToBottom();
 		}
+	}
+
+	async function startChatWithFriend(friend: import('$lib/stores/friends.svelte').FriendItem) {
+		// Check if conversation already exists
+		const existingConv = conversationsStore.conversations.find(c => c.peer.id === friend.id);
+		if (existingConv) {
+			await selectConversation(existingConv.id);
+			return;
+		}
+
+		// Create temporary conversation (will get real ID when first message is sent)
+		const tempConvId = `temp-${friend.id}`;
+		conversationsStore.addOrUpdate({
+			id: tempConvId,
+			peer: friend.user,
+			unreadCount: 0,
+		});
+		conversationsStore.setActive(tempConvId);
 	}
 
 	async function sendMessage() {
@@ -334,17 +376,18 @@
 					await saveSecretKey(secretKey, pwd);
 					await keysStore.save(secretKey, pwd);
 					success = true;
+				} else if (serverPublicKey?.startsWith('placeholder')) {
+					// 首次登入，自動設定公鑰（不彈窗）
+					console.log('📝 First login - setting public key automatically');
+					await saveSecretKey(secretKey, pwd);
+					await keysStore.save(secretKey, pwd);
+					const { updateMe } = await import('$lib/api/users');
+					await updateMe({ public_key: publicKey });
+					success = true;
 				} else {
-					// 密碼可能錯誤，或需要更新伺服器金鑰
-					const confirmed = confirm('金鑰不匹配。是否要更新為新金鑰？\n\n注意：這會讓舊訊息無法解密，但可以在任何裝置登入。');
-					if (confirmed) {
-						await saveSecretKey(secretKey, pwd);
-						await keysStore.save(secretKey, pwd);
-						const { updateMe } = await import('$lib/api/users');
-						await updateMe({ public_key: publicKey });
-						alert('金鑰已更新！現在可以在任何裝置使用相同密碼登入。');
-						success = true;
-					}
+					// 公鑰不匹配且不是 placeholder - 密碼錯誤
+					console.error('❌ Key mismatch - wrong password or account issue');
+					alert('密碼錯誤或金鑰不匹配。請確認密碼正確。');
 				}
 			}
 
@@ -406,10 +449,30 @@
 			{#if conversationsStore.loading}
 				<div class="p-4 text-center text-slate-500">載入中...</div>
 			{:else if conversationsStore.conversations.length === 0}
-				<div class="p-8 text-center text-slate-500">
-					<p class="mb-1">還沒有對話</p>
-					<p class="text-sm text-slate-600">新增好友開始聊天</p>
-				</div>
+				{#if friendsStore.friends.length === 0}
+					<div class="p-8 text-center text-slate-500">
+						<p class="mb-1">還沒有好友</p>
+						<p class="text-sm text-slate-600">請加好友開始聊天</p>
+					</div>
+				{:else}
+					<div class="p-3">
+						<p class="text-xs text-slate-500 px-2 mb-2">好友列表</p>
+						{#each friendsStore.friends as friend}
+							<button
+								onclick={() => startChatWithFriend(friend)}
+								class="w-full p-3 flex items-center gap-3 hover:bg-white/5 transition-colors rounded-lg"
+							>
+								<div class="w-10 h-10 bg-slate-700 rounded-xl flex items-center justify-center text-sm font-medium text-white">
+									{friend.user.nickname[0]}
+								</div>
+								<div class="flex-1 text-left">
+									<p class="font-medium text-white">{friend.user.nickname}</p>
+									<p class="text-xs text-slate-500">點擊開始聊天</p>
+								</div>
+							</button>
+						{/each}
+					</div>
+				{/if}
 			{:else}
 				{#each conversationsStore.conversations as conv}
 					<button
