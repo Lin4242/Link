@@ -100,8 +100,8 @@
 	}
 </script>
 
-<div class="bg-gray-900 text-white p-4" style="min-height: 100vh;">
-	<div class="max-w-4xl mx-auto pb-20">
+<div class="bg-gray-900 text-white">
+	<div class="max-w-4xl mx-auto p-4 pb-20">
 		<h1 class="text-2xl font-bold mb-6">LINK Admin</h1>
 
 		{#if !isAuthenticated}
