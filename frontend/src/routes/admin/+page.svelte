@@ -100,30 +100,38 @@
 	}
 </script>
 
-<div class="bg-gray-900 text-white">
-	<div class="max-w-4xl mx-auto p-4 pb-20">
-		<h1 class="text-2xl font-bold mb-6">LINK Admin</h1>
+<div class="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white flex flex-col">
+	<div class="max-w-4xl w-full mx-auto p-4 pb-20 flex-1">
+		<h1 class="text-lg font-light tracking-wider text-slate-400 mb-8 mt-2">LINK</h1>
 
 		{#if !isAuthenticated}
-			<div class="bg-gray-800 rounded-lg p-6 max-w-sm mx-auto">
-				<h2 class="text-lg font-semibold mb-4">輸入密碼</h2>
-				<form onsubmit={(e) => { e.preventDefault(); login(); }}>
-					<input
-						type="password"
-						bind:value={password}
-						placeholder="Admin 密碼"
-						class="w-full px-4 py-3 bg-black border-2 border-gray-500 rounded-lg mb-4 text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none"
-						inputmode="numeric"
-						style="background-color: #000 !important; color: #fff !important; -webkit-text-fill-color: #fff;"
-					/>
-					<button
-						type="submit"
-						disabled={loading}
-						class="w-full bg-blue-600 py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50"
-					>
-						{loading ? '驗證中...' : '登入'}
-					</button>
-				</form>
+			<div class="flex items-center justify-center min-h-[60vh]">
+				<div class="w-full max-w-sm">
+					<form onsubmit={(e) => { e.preventDefault(); login(); }} class="space-y-4">
+						<input
+							type="password"
+							bind:value={password}
+							placeholder=""
+							class="w-full px-4 py-3 bg-slate-800/30 border border-slate-700/50 rounded-xl text-white placeholder-slate-600 focus:border-slate-600 focus:outline-none focus:ring-1 focus:ring-slate-600/50 transition-all"
+							inputmode="numeric"
+							style="background-color: rgba(30, 41, 59, 0.3); -webkit-text-fill-color: #fff;"
+							autofocus
+						/>
+						<button
+							type="submit"
+							disabled={loading}
+							class="w-full py-3 bg-slate-800/50 hover:bg-slate-700/50 disabled:opacity-30 rounded-xl font-normal transition-all duration-200 flex items-center justify-center"
+						>
+							{#if loading}
+								<div class="animate-spin w-5 h-5 border-2 border-slate-600 border-t-transparent rounded-full"></div>
+							{:else}
+								<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+								</svg>
+							{/if}
+						</button>
+					</form>
+				</div>
 			</div>
 		{:else}
 			<div class="mb-6">
@@ -202,7 +210,7 @@
 		{/if}
 
 		{#if error}
-			<div class="mt-4 p-3 bg-red-900/50 text-red-300 rounded-lg text-sm">
+			<div class="fixed bottom-8 left-1/2 -translate-x-1/2 px-4 py-2 bg-slate-800/80 backdrop-blur text-slate-400 rounded-lg text-sm">
 				{error}
 			</div>
 		{/if}
