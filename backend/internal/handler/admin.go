@@ -90,10 +90,43 @@ func (h *AdminHandler) GenerateCardPair(c *fiber.Ctx) error {
 }
 
 func (h *AdminHandler) ListCardPairs(c *fiber.Ctx) error {
-	h.pairsMutex.RLock()
-	defer h.pairsMutex.RUnlock()
+	// Get from database
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
-	return c.JSON(fiber.Map{"data": h.cardPairs})
+	rows, err := h.db.Query(ctx, `
+		SELECT primary_token, backup_token, created_at 
+		FROM card_pairs 
+		WHERE expires_at > NOW() 
+		ORDER BY created_at DESC
+	`)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "failed to fetch card pairs",
+		})
+	}
+	defer rows.Close()
+
+	var pairs []CardPairInfo
+	id := 1
+	for rows.Next() {
+		var primaryToken, backupToken string
+		var createdAt time.Time
+		if err := rows.Scan(&primaryToken, &backupToken, &createdAt); err != nil {
+			continue
+		}
+
+		pairs = append(pairs, CardPairInfo{
+			ID:          id,
+			FirstToken:  primaryToken,
+			SecondToken: backupToken,
+			FirstURL:    h.baseURL + "/w/" + primaryToken,
+			SecondURL:   h.baseURL + "/w/" + backupToken,
+		})
+		id++
+	}
+
+	return c.JSON(fiber.Map{"data": pairs})
 }
 
 func (h *AdminHandler) DeleteCardPair(c *fiber.Ctx) error {
