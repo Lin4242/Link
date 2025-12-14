@@ -1,11 +1,14 @@
 package handler
 
 import (
+	"context"
 	"sync"
+	"time"
 
 	"link/internal/pkg/cardtoken"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type AdminHandler struct {
@@ -15,6 +18,7 @@ type AdminHandler struct {
 	cardPairs  []CardPairInfo
 	pairsMutex sync.RWMutex
 	nextID     int
+	db         *pgxpool.Pool
 }
 
 type CardPairInfo struct {
@@ -25,13 +29,14 @@ type CardPairInfo struct {
 	SecondURL  string `json:"second_url"`
 }
 
-func NewAdminHandler(tokenGen *cardtoken.Generator, password, baseURL string) *AdminHandler {
+func NewAdminHandler(tokenGen *cardtoken.Generator, password, baseURL string, db *pgxpool.Pool) *AdminHandler {
 	return &AdminHandler{
 		tokenGen:  tokenGen,
 		password:  password,
 		baseURL:   baseURL,
 		cardPairs: make([]CardPairInfo, 0),
 		nextID:    1,
+		db:        db,
 	}
 }
 
@@ -52,6 +57,19 @@ func (h *AdminHandler) GenerateCardPair(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "failed to generate card pair",
+		})
+	}
+
+	// Save to database
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	_, err = h.db.Exec(ctx,
+		"INSERT INTO card_pairs (primary_token, backup_token) VALUES ($1, $2)",
+		first, second)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "failed to save card pair",
 		})
 	}
 
