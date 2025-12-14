@@ -156,49 +156,49 @@ Step 5: 兩張卡同時綁定到帳號
 - **零知識證明**: 卡片證明身份但密鑰永不離開卡片
 
 ```
-                    NTAG 424 DNA 零知識驗證流程
+                      NTAG 424 DNA Zero-Knowledge Verification
 
-┌─────────────────┐                              ┌─────────────────┐
-│   NTAG 424 DNA  │                              │     伺服器       │
-│     NFC 卡片     │                              │                 │
-│                 │                              │  存有同一把      │
-│  內建 AES 密鑰   │                              │  AES 密鑰       │
-└────────┬────────┘                              └────────┬────────┘
-         │                                                │
-         │  1. 用戶掃描 NFC 卡片                           │
-         ▼                                                │
-┌─────────────────┐                                       │
-│ 卡片內部運算:     │                                       │
-│ PICC_Data =     │                                       │
-│   UID + 計數器   │                                       │
-│ CMAC = AES(     │                                       │
-│   密鑰, PICC)   │                                       │
-└────────┬────────┘                                       │
-         │                                                │
-         │  2. 產生動態 URL:                               │
-         │  https://link.app/tap?picc_data=...&cmac=...   │
-         │                                                │
-         ▼                                                │
-┌─────────────────┐         3. 傳送驗證請求               │
-│   手機瀏覽器     │ ─────────────────────────────────────>│
-└─────────────────┘                                       ▼
-                                                ┌─────────────────┐
-                                                │ 伺服器驗證:      │
-                                                │ 1. 解密 PICC    │
-                                                │ 2. 檢查計數器    │
-                                                │ 3. 驗證 CMAC    │
-                                                │ ✓ 確認卡片真偽  │
-                                                └────────┬────────┘
-                                                         │
-         ┌───────────────────────────────────────────────┘
-         │  4. 驗證成功，發放 JWT
-         ▼
-┌─────────────────┐
-│   安全登入完成   │
-│ - 密鑰從未傳輸   │
-│ - 無法被複製     │
-│ - 無法被重放     │
-└─────────────────┘
+┌───────────────────┐                           ┌───────────────────┐
+│  NTAG 424 DNA     │                           │      Server       │
+│  NFC Card         │                           │                   │
+│                   │                           │  Stores same      │
+│  Built-in AES Key │                           │  AES Key          │
+└─────────┬─────────┘                           └─────────┬─────────┘
+          │                                               │
+          │  1. User taps NFC card                        │
+          ▼                                               │
+┌───────────────────┐                                     │
+│ Card computation: │                                     │
+│ PICC_Data =       │                                     │
+│   UID + Counter   │                                     │
+│ CMAC = AES(       │                                     │
+│   Key, PICC_Data) │                                     │
+└─────────┬─────────┘                                     │
+          │                                               │
+          │  2. Generate dynamic URL:                     │
+          │  https://link.app/tap?picc_data=...&cmac=...  │
+          │                                               │
+          ▼                                               │
+┌───────────────────┐      3. Send verification request   │
+│  Mobile Browser   │ ───────────────────────────────────>│
+└───────────────────┘                                     ▼
+                                              ┌───────────────────┐
+                                              │ Server verifies:  │
+                                              │ 1. Decrypt PICC   │
+                                              │ 2. Check counter  │
+                                              │ 3. Verify CMAC    │
+                                              │ ✓ Card verified   │
+                                              └─────────┬─────────┘
+                                                        │
+          ┌─────────────────────────────────────────────┘
+          │  4. Success, issue JWT
+          ▼
+┌───────────────────┐
+│  Login Complete   │
+│ - Key never sent  │
+│ - Cannot clone    │
+│ - Cannot replay   │
+└───────────────────┘
 ```
 
 ### 1.4.3 開源透明安全模型 (v4.3 新增)
@@ -206,26 +206,26 @@ Step 5: 兩張卡同時綁定到帳號
 目前 Demo 階段採用「開源透明模型」建立信任：
 
 ```
-┌────────────────────────────────────────────────────────┐
-│                    開源透明模型                          │
-├────────────────────────────────────────────────────────┤
-│                                                        │
-│   用戶登入時：                                          │
-│   1. 密碼經 HTTPS 傳送到伺服器                          │
-│   2. 伺服器用 Argon2id 比對（單向 hash，無法逆推）       │
-│   3. 瀏覽器端用 PBKDF2(密碼+userId) 推導 E2EE 金鑰      │
-│                                                        │
-│   開源保證：                                            │
-│   ✅ 前端程式碼公開 → 確認密碼只用於認證+金鑰推導        │
-│   ✅ 後端程式碼公開 → 確認不記錄明文密碼                 │
-│   ✅ 可自行部署 → 不信任官方伺服器可自架                 │
-│                                                        │
-│   限制：                                                │
-│   ⚠️ 理論上伺服器「技術上」能在登入時看到密碼           │
-│   ⚠️ 需信任程式碼等於部署版本                           │
-│                                                        │
-│   完整零信任方案：等 NTAG424 DNA 實作 SUN 驗證          │
-└────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│                  Open Source Transparency Model              │
+├──────────────────────────────────────────────────────────────┤
+│                                                              │
+│  During login:                                               │
+│  1. Password sent to server via HTTPS                        │
+│  2. Server compares with Argon2id hash (one-way, no reverse) │
+│  3. Browser derives E2EE key via PBKDF2(password + userId)   │
+│                                                              │
+│  Open source guarantees:                                     │
+│  ✅ Frontend code public - verify password usage             │
+│  ✅ Backend code public - verify no plaintext logging        │
+│  ✅ Self-deployable - run your own server if untrusted       │
+│                                                              │
+│  Limitations:                                                │
+│  ⚠️  Server "technically" sees password during login         │
+│  ⚠️  Must trust deployed code matches source                 │
+│                                                              │
+│  Full zero-trust: Wait for NTAG424 DNA SUN verification      │
+└──────────────────────────────────────────────────────────────┘
 ```
 
 ### 1.5 開發原則 (CLAUDE.md)
