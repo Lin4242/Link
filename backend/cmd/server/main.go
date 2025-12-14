@@ -63,9 +63,27 @@ func main() {
 	msgSvc := service.NewMessageService(msgRepo, convRepo)
 
 	hub := transport.NewHub()
-	go hub.Run()
-
 	transportHandler := transport.NewHandler(hub, msgSvc, convSvc)
+
+	// Set up online/offline notifications
+	hub.SetOnConnect(func(userID string) {
+		friends, err := friendRepo.FindFriends(context.Background(), userID)
+		if err != nil {
+			slog.Error("failed to get friends for online notification", "user_id", userID, "error", err)
+			return
+		}
+		transportHandler.NotifyOnline(userID, friends)
+	})
+	hub.SetOnDisconnect(func(userID string) {
+		friends, err := friendRepo.FindFriends(context.Background(), userID)
+		if err != nil {
+			slog.Error("failed to get friends for offline notification", "user_id", userID, "error", err)
+			return
+		}
+		transportHandler.NotifyOffline(userID, friends)
+	})
+
+	go hub.Run()
 
 	authHandler := handler.NewAuthHandler(authSvc, cardSvc, cfg.BaseURL)
 	userHandler := handler.NewUserHandler(userSvc, cardSvc)

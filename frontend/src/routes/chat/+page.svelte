@@ -305,7 +305,7 @@
 {#if privacyScreen}
 <div class="fixed inset-0 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center z-[100]">
 	<div class="text-center text-white w-full max-w-xs px-6">
-		<div class="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-sky-400 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/30">
+		<div class="w-16 h-16 mx-auto mb-4 rounded-xl flex items-center justify-center shadow-lg" style="background: linear-gradient(135deg, #3ACACA, #2BA3A3); box-shadow: 0 10px 15px -3px rgba(58, 202, 202, 0.3);">
 			<svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
 			</svg>
@@ -329,9 +329,10 @@
 				type="password"
 				name="privacyPwd"
 				placeholder="輸入密碼解鎖"
-				class="w-full px-4 py-3 rounded-xl bg-slate-700/50 text-white placeholder-slate-500 border border-white/10 focus:outline-none focus:ring-2 focus:ring-blue-500/50 mb-3"
+				class="w-full px-4 py-3 rounded-xl bg-slate-700/50 text-white placeholder-slate-500 border border-white/10 focus:outline-none focus:ring-2 mb-3"
+				style="--tw-ring-color: rgba(58, 202, 202, 0.5);"
 			/>
-			<button type="submit" class="w-full py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-medium rounded-xl shadow-lg shadow-blue-500/20">
+			<button type="submit" class="w-full py-3 text-white font-medium rounded-xl shadow-lg" style="background: linear-gradient(to right, #3ACACA, #2BA3A3); box-shadow: 0 10px 15px -3px rgba(58, 202, 202, 0.2);">
 				解鎖
 			</button>
 		</form>
@@ -342,7 +343,7 @@
 <!-- Key unlock modal -->
 {#if transportStore.connected && !keysStore.secretKey}
 <div class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-	<div class="bg-slate-800 rounded-2xl p-6 max-w-sm w-full border border-white/10 shadow-xl">
+	<div class="bg-slate-800 rounded-xl p-6 max-w-sm w-full border border-white/10 shadow-xl">
 		<h2 class="text-lg font-bold text-white mb-2">解鎖加密金鑰</h2>
 		<p class="text-sm text-slate-400 mb-5">請輸入密碼來解鎖您的加密金鑰</p>
 		<form onsubmit={async (e) => {
@@ -409,10 +410,11 @@
 				type="password"
 				name="unlockPwd"
 				placeholder="輸入密碼"
-				class="w-full px-4 py-3 bg-slate-700/50 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 mb-4"
+				class="w-full px-4 py-3 bg-slate-700/50 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 mb-4"
+				style="--tw-ring-color: rgba(58, 202, 202, 0.5);"
 				autofocus
 			/>
-			<button type="submit" class="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 rounded-xl font-medium shadow-lg shadow-blue-500/20">
+			<button type="submit" class="w-full text-white py-3 rounded-xl font-medium shadow-lg" style="background: linear-gradient(to right, #3ACACA, #2BA3A3); box-shadow: 0 10px 15px -3px rgba(58, 202, 202, 0.2);">
 				解鎖
 			</button>
 		</form>
@@ -420,13 +422,13 @@
 </div>
 {/if}
 
-<div class="h-[100dvh] flex bg-slate-900 overflow-hidden {!transportStore.connected ? 'pt-8' : ''}">
+<div class="h-dvh flex bg-slate-900 overflow-hidden {!transportStore.connected ? 'pt-8' : ''}" style="height: 100dvh; height: -webkit-fill-available;">
 	<!-- Sidebar -->
 	<div class="w-full md:w-80 bg-slate-800 border-r border-white/5 flex flex-col flex-shrink-0 {activeConversation ? 'hidden md:flex' : 'flex'}">
 		<!-- Header -->
 		<div class="p-4 border-b border-white/5 flex items-center justify-between">
 			<div class="flex items-center gap-3">
-				<div class="w-10 h-10 bg-gradient-to-br from-sky-400 to-blue-600 rounded-xl flex items-center justify-center text-white font-medium shadow-lg shadow-blue-500/20">
+				<div class="w-10 h-10 rounded-xl flex items-center justify-center text-white font-medium shadow-lg" style="background: linear-gradient(135deg, #3ACACA, #2BA3A3); box-shadow: 0 10px 15px -3px rgba(58, 202, 202, 0.2);">
 					{authStore.user?.nickname?.[0] || '?'}
 				</div>
 				<div>
@@ -477,8 +479,8 @@
 				{#each conversationsStore.conversations as conv}
 					<button
 						onclick={() => selectConversation(conv.id)}
-						class="w-full p-4 flex items-center gap-3 hover:bg-white/5 transition-colors border-b border-white/5
-							{conversationsStore.activeConversationId === conv.id ? 'bg-blue-500/10' : ''}"
+						class="w-full p-4 flex items-center gap-3 hover:bg-white/5 transition-colors border-b border-white/5"
+						style={conversationsStore.activeConversationId === conv.id ? 'background-color: rgba(58, 202, 202, 0.1);' : ''}
 					>
 						<div class="relative">
 							<div class="w-12 h-12 bg-slate-700 rounded-xl flex items-center justify-center text-lg font-medium text-white">
@@ -498,13 +500,13 @@
 							<div class="flex items-center justify-between mt-0.5">
 								<p class="text-sm text-slate-500 truncate">
 									{#if typingUsers[conv.peer.id]}
-										<span class="text-blue-400">正在輸入...</span>
+										<span style="color: #3ACACA;">正在輸入...</span>
 									{:else}
 										點擊開始聊天
 									{/if}
 								</p>
 								{#if conv.unreadCount > 0}
-									<span class="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full min-w-[20px] text-center font-medium">
+									<span class="text-white text-xs px-2 py-0.5 rounded-full min-w-[20px] text-center font-medium" style="background-color: #3ACACA;">
 										{conv.unreadCount > 99 ? '99+' : conv.unreadCount}
 									</span>
 								{/if}
@@ -528,7 +530,7 @@
 		{#if !activeConversation}
 			<div class="flex-1 flex items-center justify-center">
 				<div class="text-center">
-					<div class="w-16 h-16 mx-auto mb-4 bg-slate-800 rounded-2xl flex items-center justify-center">
+					<div class="w-16 h-16 mx-auto mb-4 bg-slate-800 rounded-xl flex items-center justify-center">
 						<svg class="w-8 h-8 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
 						</svg>
@@ -560,7 +562,7 @@
 					<p class="font-medium text-white">{activeConversation.peer.nickname}</p>
 					<p class="text-xs text-slate-500">
 						{#if isTyping}
-							<span class="text-blue-400">正在輸入...</span>
+							<span style="color: #3ACACA;">正在輸入...</span>
 						{:else if friendsStore.friends.find((f) => f.id === activeConversation.peer.id)?.isOnline}
 							在線上
 						{:else}
@@ -606,12 +608,15 @@
 										console.log('Cannot delete:', { isOwn, pending: msg.pending, hasConv: !!activeConversation });
 									}
 								}}
-								class="max-w-[75%] {isOwn ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white' : 'bg-slate-800 text-white'} rounded-2xl px-4 py-2.5 shadow-lg text-left
-									{msg.pending ? 'opacity-60' : ''} {isOwn ? 'shadow-blue-500/10 hover:from-blue-600 hover:to-blue-700 active:scale-95' : 'shadow-black/20'} transition-all"
+								class="max-w-[75%] {isOwn ? 'text-white' : 'bg-slate-800 text-white'} rounded-xl px-4 py-2.5 shadow-lg text-left
+									{msg.pending ? 'opacity-60' : ''} {isOwn ? 'active:scale-95' : 'shadow-black/20'} transition-all"
+								style={isOwn ? 'background: linear-gradient(to right, #3ACACA, #2BA3A3); box-shadow: 0 10px 15px -3px rgba(58, 202, 202, 0.1);' : ''}
+								onmouseenter={(e) => isOwn && !msg.pending && (e.currentTarget.style.background = 'linear-gradient(to right, #2BA3A3, #238B8B)')}
+								onmouseleave={(e) => isOwn && !msg.pending && (e.currentTarget.style.background = 'linear-gradient(to right, #3ACACA, #2BA3A3)')}
 								disabled={!isOwn || msg.pending}
 							>
 								<p class="break-words whitespace-pre-wrap text-sm">{msg.content}</p>
-								<p class="text-xs {isOwn ? 'text-blue-200' : 'text-slate-500'} mt-1 text-right">
+								<p class="text-xs mt-1 text-right" style={isOwn ? 'color: rgba(58, 202, 202, 0.7);' : 'color: #64748b;'}>
 									{formatTime(msg.createdAt)}
 									{#if isOwn && msg.pending}
 										<span class="ml-1">...</span>
@@ -624,7 +629,7 @@
 			</div>
 
 			<!-- Message Input -->
-			<div class="p-4 bg-slate-800 border-t border-white/5">
+			<div class="p-4 pb-safe bg-slate-800 border-t border-white/5" style="padding-bottom: max(1rem, env(safe-area-inset-bottom))">
 				{#if !transportStore.connected}
 					<div class="text-center text-sm text-amber-400/80 mb-3">
 						未連線 - 訊息功能暫時無法使用
@@ -641,13 +646,17 @@
 						onkeydown={handleKeydown}
 						oninput={handleTyping}
 						placeholder="輸入訊息..."
-						class="flex-1 px-4 py-3 bg-slate-700/50 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+						class="flex-1 px-4 py-3 bg-slate-700/50 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2"
+						style="--tw-ring-color: rgba(58, 202, 202, 0.5);"
 						disabled={sending}
 					/>
 					<button
 						type="submit"
 						disabled={!messageInput.trim() || sending || !transportStore.connected || !keysStore.secretKey}
-						class="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl flex items-center justify-center hover:from-blue-600 hover:to-blue-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-blue-500/20"
+						class="w-12 h-12 text-white rounded-xl flex items-center justify-center transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-lg"
+						style="background: linear-gradient(to right, #3ACACA, #2BA3A3); box-shadow: 0 10px 15px -3px rgba(58, 202, 202, 0.2);"
+						onmouseenter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.background = 'linear-gradient(to right, #2BA3A3, #238B8B)')}
+						onmouseleave={(e) => !e.currentTarget.disabled && (e.currentTarget.style.background = 'linear-gradient(to right, #3ACACA, #2BA3A3)')}
 						aria-label="發送訊息"
 					>
 						<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -13,10 +13,12 @@ type Client interface {
 }
 
 type Hub struct {
-	clients    map[string]Client
-	mu         sync.RWMutex
-	register   chan Client
-	unregister chan Client
+	clients      map[string]Client
+	mu           sync.RWMutex
+	register     chan Client
+	unregister   chan Client
+	onConnect    func(userID string)
+	onDisconnect func(userID string)
 }
 
 func NewHub() *Hub {
@@ -25,6 +27,14 @@ func NewHub() *Hub {
 		register:   make(chan Client, 256),
 		unregister: make(chan Client, 256),
 	}
+}
+
+func (h *Hub) SetOnConnect(fn func(userID string)) {
+	h.onConnect = fn
+}
+
+func (h *Hub) SetOnDisconnect(fn func(userID string)) {
+	h.onDisconnect = fn
 }
 
 func (h *Hub) Run() {
@@ -38,6 +48,9 @@ func (h *Hub) Run() {
 			h.clients[c.GetUserID()] = c
 			h.mu.Unlock()
 			slog.Info("client connected", "user_id", c.GetUserID())
+			if h.onConnect != nil {
+				go h.onConnect(c.GetUserID())
+			}
 
 		case c := <-h.unregister:
 			h.mu.Lock()
@@ -46,6 +59,9 @@ func (h *Hub) Run() {
 			}
 			h.mu.Unlock()
 			slog.Info("client disconnected", "user_id", c.GetUserID())
+			if h.onDisconnect != nil {
+				go h.onDisconnect(c.GetUserID())
+			}
 		}
 	}
 }

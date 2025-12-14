@@ -9,7 +9,7 @@
 
 {#if show}
 	<div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-		<div class="bg-white rounded-lg max-w-md w-full p-6 shadow-xl">
+		<div class="bg-white max-w-md w-full p-6 shadow-xl">
 			<div class="flex items-center gap-3 mb-4">
 				<div class="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
 					<svg
@@ -45,7 +45,10 @@
 
 			<button
 				onclick={onClose}
-				class="mt-6 w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+				class="mt-6 w-full text-white py-2 px-4 transition-colors"
+				style="background-color: #3ACACA;"
+				onmouseenter={(e) => e.currentTarget.style.backgroundColor = '#2BA3A3'}
+				onmouseleave={(e) => e.currentTarget.style.backgroundColor = '#3ACACA'}
 			>
 				我了解了
 			</button>

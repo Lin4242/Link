@@ -1,5 +1,21 @@
 @import 'tailwindcss';
 
+/* Safe area utilities for mobile devices */
+.pb-safe {
+	padding-bottom: env(safe-area-inset-bottom);
+}
+
+.pt-safe {
+	padding-top: env(safe-area-inset-top);
+}
+
+/* Full height that works on mobile */
+.h-dvh {
+	height: 100vh;
+	height: 100dvh;
+	height: -webkit-fill-available;
+}
+
 /* Chat-specific styles should be applied via class */
 .chat-layout {
 	height: 100%;

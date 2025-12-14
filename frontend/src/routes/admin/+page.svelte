@@ -112,7 +112,7 @@
 							type="password"
 							bind:value={password}
 							placeholder=""
-							class="w-full px-4 py-3 bg-slate-800/30 border border-slate-700/50 rounded-xl text-white placeholder-slate-600 focus:border-slate-600 focus:outline-none focus:ring-1 focus:ring-slate-600/50 transition-all"
+							class="w-full px-4 py-3 bg-slate-800/30 border border-slate-700/50 rounded-lg text-white placeholder-slate-600 focus:border-slate-600 focus:outline-none focus:ring-1 focus:ring-slate-600/50 transition-all"
 							inputmode="numeric"
 							style="background-color: rgba(30, 41, 59, 0.3); -webkit-text-fill-color: #fff;"
 							autofocus
@@ -120,7 +120,7 @@
 						<button
 							type="submit"
 							disabled={loading}
-							class="w-full py-3 bg-slate-800/50 hover:bg-slate-700/50 disabled:opacity-30 rounded-xl font-normal transition-all duration-200 flex items-center justify-center"
+							class="w-full py-3 bg-slate-800/50 hover:bg-slate-700/50 disabled:opacity-30 rounded-lg font-normal transition-all duration-200 flex items-center justify-center"
 						>
 							{#if loading}
 								<div class="animate-spin w-5 h-5 border-2 border-slate-600 border-t-transparent rounded-full"></div>

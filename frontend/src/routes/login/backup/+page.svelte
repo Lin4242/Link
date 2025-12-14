@@ -139,7 +139,7 @@
 			<p class="text-slate-400 text-sm mt-1">Backup Card Login</p>
 		</div>
 
-		<div class="bg-slate-800/50 backdrop-blur rounded-2xl p-6 border border-white/10">
+		<div class="bg-slate-800/50 backdrop-blur rounded-xl p-6 border border-white/10">
 			<div class="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 mb-6">
 				<p class="text-amber-400 text-sm">
 					您正在使用附卡（備援卡）。登入後，您的主卡將被<span class="font-bold">永久撤銷</span>。
