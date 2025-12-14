@@ -104,7 +104,7 @@ func (h *AdminHandler) ListCardPairs(c *fiber.Ctx) error {
 		FROM card_pairs cp
 		LEFT JOIN cards c ON c.card_token = cp.primary_token AND c.card_type = 'primary' AND c.status = 'active'
 		WHERE cp.expires_at > NOW() 
-		ORDER BY cp.created_at ASC
+		ORDER BY cp.created_at DESC
 	`)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -113,25 +113,40 @@ func (h *AdminHandler) ListCardPairs(c *fiber.Ctx) error {
 	}
 	defer rows.Close()
 
-	var pairs []CardPairInfo
-	id := 1
+	// First, collect all pairs to count total
+	var tempPairs []struct {
+		primaryToken string
+		backupToken  string
+		createdAt    time.Time
+		isActivated  bool
+	}
+	
 	for rows.Next() {
-		var primaryToken, backupToken string
-		var createdAt time.Time
-		var isActivated bool
-		if err := rows.Scan(&primaryToken, &backupToken, &createdAt, &isActivated); err != nil {
+		var p struct {
+			primaryToken string
+			backupToken  string
+			createdAt    time.Time
+			isActivated  bool
+		}
+		if err := rows.Scan(&p.primaryToken, &p.backupToken, &p.createdAt, &p.isActivated); err != nil {
 			continue
 		}
+		tempPairs = append(tempPairs, p)
+	}
 
+	// Now assign IDs in reverse order (newest gets highest ID)
+	totalCount := len(tempPairs)
+	var pairs []CardPairInfo
+	
+	for i, p := range tempPairs {
 		pairs = append(pairs, CardPairInfo{
-			ID:          id,
-			FirstToken:  primaryToken,
-			SecondToken: backupToken,
-			FirstURL:    h.baseURL + "/w/" + primaryToken,
-			SecondURL:   h.baseURL + "/w/" + backupToken,
-			IsActivated: isActivated,
+			ID:          totalCount - i, // Reverse the ID
+			FirstToken:  p.primaryToken,
+			SecondToken: p.backupToken,
+			FirstURL:    h.baseURL + "/w/" + p.primaryToken,
+			SecondURL:   h.baseURL + "/w/" + p.backupToken,
+			IsActivated: p.isActivated,
 		})
-		id++
 	}
 
 	return c.JSON(fiber.Map{"data": pairs})
