@@ -29,6 +29,12 @@ sudo systemctl restart link-backend
 
 echo "Rebuilding frontend..."
 cd ~/Link/frontend
+
+# 確保使用正確的環境變數（留空以使用 window.location.origin）
+rm -f .env .env.production
+echo "VITE_API_URL=" > .env.production
+echo "VITE_WS_URL=" >> .env.production
+
 pnpm install
 pnpm build
 

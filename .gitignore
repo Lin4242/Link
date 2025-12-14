@@ -21,6 +21,8 @@ backend/link-server
 node_modules/
 dist/
 .svelte-kit/
+frontend/.env
+frontend/.env.production
 
 # Go
 *.exe
