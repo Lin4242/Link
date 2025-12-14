@@ -10,10 +10,11 @@ import (
 type AuthHandler struct {
 	authSvc *service.AuthService
 	cardSvc *service.CardService
+	baseURL string
 }
 
-func NewAuthHandler(authSvc *service.AuthService, cardSvc *service.CardService) *AuthHandler {
-	return &AuthHandler{authSvc: authSvc, cardSvc: cardSvc}
+func NewAuthHandler(authSvc *service.AuthService, cardSvc *service.CardService, baseURL string) *AuthHandler {
+	return &AuthHandler{authSvc: authSvc, cardSvc: cardSvc, baseURL: baseURL}
 }
 
 func (h *AuthHandler) CheckCard(c *fiber.Ctx) error {
@@ -91,22 +92,21 @@ func (h *AuthHandler) CardEntry(c *fiber.Ctx) error {
 	token := c.Params("token")
 	result, _ := h.cardSvc.CheckCard(c.Context(), token)
 
-	frontendURL := "https://192.168.1.99:5173"
 	switch result.Status {
 	case "can_register":
-		return c.Redirect(frontendURL + "/register?token=" + token)
+		return c.Redirect(h.baseURL + "/register?token=" + token)
 	case "primary":
-		return c.Redirect(frontendURL + "/login?token=" + token)
+		return c.Redirect(h.baseURL + "/login?token=" + token)
 	case "backup":
-		return c.Redirect(frontendURL + "/login/backup?token=" + token)
+		return c.Redirect(h.baseURL + "/login/backup?token=" + token)
 	case "revoked":
-		return c.Redirect(frontendURL + "/error?reason=card_revoked")
+		return c.Redirect(h.baseURL + "/error?reason=card_revoked")
 	case "invalid_token":
-		return c.Redirect(frontendURL + "/error?reason=invalid_token")
+		return c.Redirect(h.baseURL + "/error?reason=invalid_token")
 	case "pair_already_registered":
-		return c.Redirect(frontendURL + "/error?reason=pair_registered")
+		return c.Redirect(h.baseURL + "/error?reason=pair_registered")
 	default:
-		return c.Redirect(frontendURL + "/error")
+		return c.Redirect(h.baseURL + "/error")
 	}
 }
 

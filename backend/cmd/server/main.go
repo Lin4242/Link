@@ -67,7 +67,7 @@ func main() {
 
 	transportHandler := transport.NewHandler(hub, msgSvc, convSvc)
 
-	authHandler := handler.NewAuthHandler(authSvc, cardSvc)
+	authHandler := handler.NewAuthHandler(authSvc, cardSvc, cfg.BaseURL)
 	userHandler := handler.NewUserHandler(userSvc, cardSvc)
 	friendHandler := handler.NewFriendHandler(friendSvc)
 	convHandler := handler.NewConversationHandler(convSvc, msgSvc, hub)
