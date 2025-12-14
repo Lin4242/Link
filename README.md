@@ -193,8 +193,8 @@ LINK 是一個以安全為核心設計的即時通訊應用程式，結合 NFC �
 
 ```bash
 # 1. 克隆專案
-git clone https://github.com/your-org/link.git
-cd link
+git clone https://github.com/Lin4242/Link.git
+cd Link
 
 # 2. 啟動資料庫
 docker compose up -d
