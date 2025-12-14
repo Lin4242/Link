@@ -27,6 +27,7 @@ type CardPairInfo struct {
 	SecondToken string `json:"second_token"`
 	FirstURL   string `json:"first_url"`
 	SecondURL  string `json:"second_url"`
+	IsActivated bool  `json:"is_activated"`
 }
 
 func NewAdminHandler(tokenGen *cardtoken.Generator, password, baseURL string, db *pgxpool.Pool) *AdminHandler {
@@ -95,10 +96,15 @@ func (h *AdminHandler) ListCardPairs(c *fiber.Ctx) error {
 	defer cancel()
 
 	rows, err := h.db.Query(ctx, `
-		SELECT primary_token, backup_token, created_at 
-		FROM card_pairs 
-		WHERE expires_at > NOW() 
-		ORDER BY created_at DESC
+		SELECT 
+			cp.primary_token, 
+			cp.backup_token, 
+			cp.created_at,
+			CASE WHEN u.id IS NOT NULL THEN true ELSE false END as is_activated
+		FROM card_pairs cp
+		LEFT JOIN users u ON u.card_token = cp.primary_token
+		WHERE cp.expires_at > NOW() 
+		ORDER BY cp.created_at DESC
 	`)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -112,7 +118,8 @@ func (h *AdminHandler) ListCardPairs(c *fiber.Ctx) error {
 	for rows.Next() {
 		var primaryToken, backupToken string
 		var createdAt time.Time
-		if err := rows.Scan(&primaryToken, &backupToken, &createdAt); err != nil {
+		var isActivated bool
+		if err := rows.Scan(&primaryToken, &backupToken, &createdAt, &isActivated); err != nil {
 			continue
 		}
 
@@ -122,6 +129,7 @@ func (h *AdminHandler) ListCardPairs(c *fiber.Ctx) error {
 			SecondToken: backupToken,
 			FirstURL:    h.baseURL + "/w/" + primaryToken,
 			SecondURL:   h.baseURL + "/w/" + backupToken,
+			IsActivated: isActivated,
 		})
 		id++
 	}

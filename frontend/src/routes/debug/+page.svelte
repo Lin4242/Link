@@ -74,6 +74,13 @@
 			</a>
 			
 			<a 
+				href="/register?reset=true"
+				class="block w-full py-3 bg-orange-600 hover:bg-orange-700 rounded-xl font-semibold transition-all text-center"
+			>
+				Force Reset Registration
+			</a>
+			
+			<a 
 				href="/admin"
 				class="block w-full py-3 bg-purple-600 hover:bg-purple-700 rounded-xl font-semibold transition-all text-center"
 			>

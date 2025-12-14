@@ -16,6 +16,14 @@
 
 	onMount(async () => {
 		const token = $page.url.searchParams.get('token');
+		const forceReset = $page.url.searchParams.get('reset') === 'true';
+
+		// Clear cache if force reset
+		if (forceReset) {
+			localStorage.removeItem('register_first_card');
+			localStorage.removeItem('register_paired_token');
+			localStorage.removeItem('register_cache_time');
+		}
 
 		if (!token) {
 			step = 'need_both';

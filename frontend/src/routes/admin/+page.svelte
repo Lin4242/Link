@@ -153,7 +153,21 @@
 					{#each cardPairs as pair (pair.id)}
 						<div class="bg-gray-800 rounded-lg p-4">
 							<div class="flex justify-between items-start mb-3">
-								<span class="text-sm text-gray-400">卡片對 #{pair.id}</span>
+								<div class="flex items-center gap-2">
+									<span class="text-sm text-gray-400">卡片對 #{pair.id}</span>
+									{#if pair.is_activated}
+										<span class="flex items-center gap-1 text-xs px-2 py-1 bg-green-600/20 text-green-400 rounded-full">
+											<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+											</svg>
+											已開卡
+										</span>
+									{:else}
+										<span class="text-xs px-2 py-1 bg-yellow-600/20 text-yellow-400 rounded-full">
+											未開卡
+										</span>
+									{/if}
+								</div>
 								<button
 									onclick={() => deletePair(pair.id)}
 									class="text-red-400 hover:text-red-300 text-sm"
