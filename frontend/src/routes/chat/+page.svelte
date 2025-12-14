@@ -328,7 +328,7 @@
 			<input
 				type="password"
 				name="privacyPwd"
-				placeholder="輸入密碼解鎖"
+				placeholder="輸入密碼"
 				class="w-full px-4 py-3 rounded-xl bg-slate-700/50 text-white placeholder-slate-500 border border-white/10 focus:outline-none focus:ring-2 mb-3"
 				style="--tw-ring-color: rgba(58, 202, 202, 0.5);"
 			/>
@@ -344,8 +344,8 @@
 {#if transportStore.connected && !keysStore.secretKey}
 <div class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
 	<div class="bg-slate-800 rounded-xl p-6 max-w-sm w-full border border-white/10 shadow-xl">
-		<h2 class="text-lg font-bold text-white mb-2">解鎖加密金鑰</h2>
-		<p class="text-sm text-slate-400 mb-5">請輸入密碼來解鎖您的加密金鑰</p>
+		<h2 class="text-lg font-bold text-white mb-2">載入加密金鑰</h2>
+		<p class="text-sm text-slate-400 mb-5">請輸入密碼以存取您的加密訊息</p>
 		<form onsubmit={async (e) => {
 			e.preventDefault();
 			const form = e.target as HTMLFormElement;
@@ -403,7 +403,7 @@
 					);
 				}
 			} else {
-				alert('無法解鎖金鑰，請確認密碼是否正確。');
+				alert('密碼錯誤，請重新輸入。');
 			}
 		}}>
 			<input
@@ -415,7 +415,7 @@
 				autofocus
 			/>
 			<button type="submit" class="w-full text-white py-3 rounded-xl font-medium shadow-lg" style="background: linear-gradient(to right, #3ACACA, #2BA3A3); box-shadow: 0 10px 15px -3px rgba(58, 202, 202, 0.2);">
-				解鎖
+				確認
 			</button>
 		</form>
 	</div>
