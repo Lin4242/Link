@@ -1,27 +1,56 @@
 # Claude 交接文件
 
 > 每次重啟 Claude 後閱讀此文件快速恢復上下文
+> **敏感資訊 (密碼/token)**: 見 `local_note.md` (gitignored)
 
 ---
 
 ## 專案狀態 (2024-12-15)
 
 ### 當前狀態
-- **線上資料庫**: 已清空，無用戶資料
-- **需要**: 用戶提供 NFC 卡片 token 才能用 seed script 建立 demo 資料
-- **SPEC 文件**: `LINK-SPEC-v4.3.md` (完整規格)
+- **線上環境**: 已部署完成，可正常使用
+- **Seed 資料**: 已執行，小安 + Demo 卡片都已建立
+- **自動加好友**: 新用戶註冊後自動與小安成為好友
 
 ### 已完成
-- [x] Seed script 建立 (`backend/cmd/seed/main.go`)
-- [x] 移除硬編碼密碼，強制環境變數
-- [x] GCP 伺服器部署完成
-- [x] Playwright MCP 已安裝 (瀏覽器自動化)
-- [x] 副卡登入頁面更新為深色主題
+- [x] Seed script (`backend/cmd/seed/main.go`)
+- [x] 小安服務帳號 (可登入)
+- [x] Demo 卡片 (只有 card_pairs，未註冊，可走完整 demo)
+- [x] Auto-friend 功能 (SERVICE_USER_ID)
+- [x] NFC 跨 tab cookie 修復 (iPhone Safari)
+- [x] Admin 面板 (產生卡片 token)
 
-### 待完成
-- [ ] 取得 NFC 卡片 token 填入 seed script
-- [ ] 完整 demo 流程測試
-- [ ] NTAG424 DNA 零知識驗證（等硬體到貨）
+### 待測試
+- [ ] 完整 NFC 註冊流程 (刷主卡 → 刷副卡 → 註冊)
+- [ ] 小安電腦端登入
+- [ ] 聊天功能 (E2EE 加解密)
+- [ ] 好友系統
+
+---
+
+## 測試流程
+
+### 1. 小安登入測試 (電腦端)
+```
+1. 開啟 小安 Login URL (見 local_note.md)
+2. 輸入密碼登入
+3. 確認進入聊天頁面
+```
+
+### 2. Demo 註冊流程測試 (NFC)
+```
+1. 刷主卡 → 應進入註冊頁面
+2. 刷副卡 → 配對成功
+3. 填寫暱稱和密碼
+4. 完成註冊後確認好友列表有小安
+```
+
+### 3. 聊天測試
+```
+1. 小安和新用戶各開一個瀏覽器
+2. 互傳訊息
+3. 確認雙方都能看到且能解密
+```
 
 ---
 
@@ -31,10 +60,43 @@
 |------|------|
 | 後端入口 | `backend/cmd/server/main.go` |
 | Seed Script | `backend/cmd/seed/main.go` |
+| Auth Service | `backend/internal/service/auth.go` |
 | 前端聊天頁 | `frontend/src/routes/chat/+page.svelte` |
+| 註冊頁 | `frontend/src/routes/register/+page.svelte` |
 | 金鑰推導 | `frontend/src/lib/crypto/keys.ts` |
 | WebSocket | `backend/internal/transport/` |
 | 設定檔 | `backend/internal/config/config.go` |
+
+---
+
+## API 端點
+
+### Public
+| Method | Path | 用途 |
+|--------|------|------|
+| GET | `/health` | 健康檢查 |
+| GET | `/w/:token` | NFC 卡片入口 |
+| GET | `/api/v1/auth/check-card/:token` | 檢查卡片狀態 |
+| POST | `/api/v1/auth/register` | 註冊 |
+| POST | `/api/v1/auth/login` | 登入 (主卡) |
+| POST | `/api/v1/auth/login/backup` | 登入 (副卡撤銷) |
+
+### Auth Required
+| Method | Path | 用途 |
+|--------|------|------|
+| GET | `/api/v1/users/me` | 取得自己資料 |
+| PATCH | `/api/v1/users/me` | 更新資料 |
+| GET | `/api/v1/friends` | 好友列表 |
+| POST | `/api/v1/friends/request` | 發送好友請求 |
+| GET | `/api/v1/conversations` | 對話列表 |
+| GET | `/ws` | WebSocket 連線 |
+
+### Admin
+| Method | Path | 用途 |
+|--------|------|------|
+| POST | `/api/v1/admin/cards/generate` | 產生卡片 token |
+| GET | `/api/v1/admin/cards` | 列出所有卡片 |
+| DELETE | `/api/v1/admin/cards/:id` | 刪除卡片 |
 
 ---
 
@@ -44,136 +106,90 @@
 |------|---|
 | SSH | `ssh jimmy@link.mcphub.tw` |
 | App 路徑 | `/home/rocketmantw5516/Link/` |
+| Run as | `rocketmantw5516` |
 | 後端服務 | `sudo systemctl restart link-backend` |
-| 資料庫 | `sudo -u postgres psql -d link` |
+| 資料庫 | PostgreSQL, user `postgres`, db `link` |
 | 網址 | https://link.mcphub.tw |
 
 ---
 
-## Seed Script 使用
+## 常用指令
 
 ```bash
-cd backend
+# 重啟後端
+ssh jimmy@link.mcphub.tw 'sudo systemctl restart link-backend'
 
-# 設定 NFC 卡片 token (需從實體卡片取得)
-export DATABASE_URL=postgres://...
-export SEED_DEMO_PRIMARY_TOKEN=主卡token
-export SEED_DEMO_BACKUP_TOKEN=附卡token
-export SEED_DEMO_NICKNAME=小安
-export SEED_DEMO_PASSWORD=demo1234
+# 查看 logs
+ssh jimmy@link.mcphub.tw 'sudo journalctl -u link-backend -f'
 
-go run ./cmd/seed
-```
+# Pull + Restart
+ssh jimmy@link.mcphub.tw 'cd /home/rocketmantw5516/Link && sudo -u rocketmantw5516 git pull && cd backend && sudo -u rocketmantw5516 /usr/local/go/bin/go build -o bin/server ./cmd/server && sudo systemctl restart link-backend'
 
----
+# 執行 seed
+ssh jimmy@link.mcphub.tw 'cd /home/rocketmantw5516/Link/backend && sudo -u rocketmantw5516 bash -c "set -a && source .env.seed && set +a && /usr/local/go/bin/go run ./cmd/seed"'
 
-## Playwright MCP 使用
-
-重啟 Claude 後可用瀏覽器自動化：
-
-```
-> "打開 https://link.mcphub.tw 並截圖"
-> "填寫登入表單並提交"
-> "驗證聊天功能是否正常"
+# 資料庫查詢
+ssh jimmy@link.mcphub.tw 'sudo -u postgres psql -d link -c "SELECT id, nickname FROM users;"'
 ```
 
 ---
 
 ## 已知地雷
 
-1. **SSH 權限**: 用 `sudo -u rocketmantw5516` 執行 git/go 指令
-2. **Go 路徑**: 伺服器上用 `/usr/local/go/bin/go`
-3. **環境變數**: 必須設定 `JWT_SECRET`, `CARD_TOKEN_SECRET`, `ADMIN_PASSWORD`
-4. **密碼 Hash**: Argon2id 格式 `$argon2id$v=19$m=65536,t=3,p=N$...`
+| 問題 | 原因 | 解法 |
+|------|------|------|
+| SSH 權限 | jimmy 不是 app owner | `sudo -u rocketmantw5516` |
+| Go 找不到 | PATH 問題 | `/usr/local/go/bin/go` |
+| 環境變數失效 | sudo 不帶環境 | `bash -c "set -a && source .env && ..."` |
+| iPhone NFC 跨 tab | Safari localStorage 隔離 | 已改用 cookie |
+| 無痕模式失敗 | cookie 也被隔離 | 預期行為，告知用戶 |
 
 ---
 
-## 開發指令
+## 架構筆記
 
-```bash
-# 本機後端
-cd backend && make dev
+### Auto-Friend 功能
+- `SERVICE_USER_ID` 環境變數設定小安的 user ID
+- `backend/internal/service/auth.go` Register() 自動建立友誼
+- 新用戶註冊完成後立即與小安成為好友
 
-# 本機前端
-cd frontend && pnpm dev
+### NFC 卡片流程
+```
+掃主卡 → /w/{token} → check-card API
+  → 未註冊: redirect /register?token=xxx
+  → 已註冊: redirect /login?token=xxx
 
-# 測試
-cd backend && go test ./... -v
-cd frontend && pnpm test
+註冊頁:
+  掃第一張 → 存入 cookie
+  掃第二張 → 驗證配對 → 完成表單 → 註冊
+```
+
+### E2EE 金鑰推導
+```
+password + userId → PBKDF2 → nacl.box.keyPair
+同一組密碼在任何裝置都會產生相同 keypair
 ```
 
 ---
 
-## Admin 面板
+## Seed Script 說明
 
-| 項目 | 值 |
-|------|---|
-| 網址 | https://link.mcphub.tw/admin |
-| 密碼 | 環境變數 `ADMIN_PASSWORD` (不在 git 裡) |
-| 用途 | 產生 NFC 卡片 token pair |
+Seed 建立兩種資料:
 
-**流程**: Admin 產生 card pair → 燒錄到 NFC 卡片 → 用戶掃卡註冊/登入
+1. **小安 (Service User)** - 完整建立
+   - user + cards 都有
+   - 可以用主卡 URL 登入
+   - 作為所有新用戶的自動好友
 
----
-
-## NFC 卡片流程
-
-```
-1. Admin 產生 card pair (primary_token + backup_token)
-2. 燒錄 token 到實體 NFC 卡片 (寫入 NDEF URL)
-3. 用戶掃主卡 → 導向 /w/{token} → 檢查狀態
-   - 未註冊 → /register?token=xxx
-   - 已註冊 → /login?token=xxx
-4. 掃附卡 → /login/backup → 撤銷主卡警告
-```
-
-**卡片 URL 格式**: `https://link.mcphub.tw/w/{token}`
+2. **Demo Card Pair** - 只建立 card_pairs
+   - 不建立 user 和 cards
+   - 可以走完整的 NFC 註冊 demo 流程
 
 ---
 
-## 本地開發設定
+## 瀏覽器測試
 
-```bash
-# TLS 憑證位置 (mkcert 產生)
-certs/localhost+2.pem
-certs/localhost+2-key.pem
-
-# 後端 .env 範例
-JWT_SECRET=至少32字元的隨機字串
-CARD_TOKEN_SECRET=隨機字串
-ADMIN_PASSWORD=你的admin密碼
-DATABASE_URL=postgres://postgres:postgres@localhost:5432/link?sslmode=disable
-```
-
----
-
-## 部署流程
-
-```bash
-# SSH 進入伺服器
-ssh jimmy@link.mcphub.tw
-
-# 後端部署
-cd /home/rocketmantw5516/Link
-sudo -u rocketmantw5516 git pull
-cd backend
-sudo -u rocketmantw5516 /usr/local/go/bin/go build -o bin/server ./cmd/server
-sudo systemctl restart link-backend
-
-# 前端部署
-cd /home/rocketmantw5516/Link/frontend
-sudo -u rocketmantw5516 pnpm install
-sudo -u rocketmantw5516 pnpm build
-# 靜態檔案由 nginx 提供
-```
-
----
-
-## 清空資料庫 (重置)
-
-```bash
-ssh jimmy@link.mcphub.tw
-sudo -u postgres psql -d link -c "
-TRUNCATE TABLE messages, conversations, sessions, cards, card_pairs, friendships, users CASCADE;
-"
-```
+重啟後可用 WebFetch 或請用戶用瀏覽器測試:
+- https://link.mcphub.tw/health - 健康檢查
+- https://link.mcphub.tw/admin - Admin 面板
+- 小安登入 URL - 見 local_note.md
