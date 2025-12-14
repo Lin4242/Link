@@ -59,8 +59,8 @@ func (h *AdminHandler) GenerateCardPair(c *fiber.Ctx) error {
 		ID:          h.nextID,
 		FirstToken:  first,
 		SecondToken: second,
-		FirstURL:    "https://192.168.1.99:9443/w/" + first,
-		SecondURL:   "https://192.168.1.99:9443/w/" + second,
+		FirstURL:    h.baseURL + "/w/" + first,
+		SecondURL:   h.baseURL + "/w/" + second,
 	}
 
 	h.pairsMutex.Lock()

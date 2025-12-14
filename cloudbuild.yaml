@@ -1,0 +1,79 @@
+# Cloud Build 配置
+# 自動部署到 Cloud Run 和 Firebase Hosting
+
+substitutions:
+  _PROJECT_ID: ${PROJECT_ID}
+  _REGION: asia-east1
+  _SERVICE_NAME: link-backend
+  _SQL_INSTANCE: link-db
+
+steps:
+  # 1. Build 後端 Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/${_PROJECT_ID}/${_SERVICE_NAME}:${SHORT_SHA}', '-f', 'Dockerfile.backend', '.']
+
+  # 2. Push 後端 image 到 Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/${_PROJECT_ID}/${_SERVICE_NAME}:${SHORT_SHA}']
+
+  # 3. 部署後端到 Cloud Run
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - '${_SERVICE_NAME}'
+      - '--image=gcr.io/${_PROJECT_ID}/${_SERVICE_NAME}:${SHORT_SHA}'
+      - '--region=${_REGION}'
+      - '--platform=managed'
+      - '--allow-unauthenticated'
+      - '--port=8443'
+      - '--min-instances=1'
+      - '--max-instances=10'
+      - '--memory=512Mi'
+      - '--cpu=1'
+      - '--set-env-vars=SERVER_ENV=production'
+      - '--set-secrets=DATABASE_URL=database-url:latest,JWT_SECRET=jwt-secret:latest'
+      - '--add-cloudsql-instances=${_PROJECT_ID}:${_REGION}:${_SQL_INSTANCE}'
+
+  # 4. 取得 Cloud Run URL
+  - name: 'gcr.io/cloud-builders/gcloud'
+    id: 'get-url'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        URL=$(gcloud run services describe ${_SERVICE_NAME} --region=${_REGION} --format='value(status.url)')
+        echo "Backend URL: $URL"
+        echo $URL > /workspace/backend-url.txt
+
+  # 5. Build 前端 (使用 Cloud Run URL)
+  - name: 'gcr.io/cloud-builders/docker'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        BACKEND_URL=$(cat /workspace/backend-url.txt)
+        docker build \
+          --build-arg VITE_API_URL=$BACKEND_URL \
+          --build-arg VITE_WS_URL=${BACKEND_URL/https/wss}/ws \
+          -t frontend-build \
+          -f Dockerfile.frontend .
+
+  # 6. Extract 前端檔案
+  - name: 'gcr.io/cloud-builders/docker'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        docker create --name extract frontend-build
+        docker cp extract:/usr/share/nginx/html ./frontend-dist
+        docker rm extract
+
+  # 7. 部署前端到 Firebase Hosting
+  - name: 'gcr.io/${_PROJECT_ID}/firebase'
+    args: ['deploy', '--only', 'hosting', '--project', '${_PROJECT_ID}']
+
+timeout: 1200s
+
+options:
+  logging: CLOUD_LOGGING_ONLY

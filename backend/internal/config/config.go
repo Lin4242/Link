@@ -16,6 +16,8 @@ type Config struct {
 	TLSKey          string
 	CORSOrigins     string
 	LogLevel        string
+	AdminPassword   string
+	BaseURL         string
 }
 
 func Load() *Config {
@@ -38,6 +40,8 @@ func Load() *Config {
 		TLSKey:          getEnv("TLS_KEY_FILE", "../certs/localhost+2-key.pem"),
 		CORSOrigins:     getEnv("CORS_ORIGINS", "https://localhost:5173"),
 		LogLevel:        getEnv("LOG_LEVEL", "info"),
+		AdminPassword:   getEnv("ADMIN_PASSWORD", "42424242"),
+		BaseURL:         getEnv("BASE_URL", "https://localhost:5173"),
 	}
 }
 

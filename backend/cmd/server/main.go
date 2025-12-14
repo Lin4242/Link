@@ -71,7 +71,7 @@ func main() {
 	userHandler := handler.NewUserHandler(userSvc, cardSvc)
 	friendHandler := handler.NewFriendHandler(friendSvc)
 	convHandler := handler.NewConversationHandler(convSvc, msgSvc, hub)
-	adminHandler := handler.NewAdminHandler(cardTokenGen, "42424242", "https://192.168.1.99:5173")
+	adminHandler := handler.NewAdminHandler(cardTokenGen, cfg.AdminPassword, cfg.BaseURL)
 
 	handlers := &handler.Handlers{
 		Auth:   authHandler,
