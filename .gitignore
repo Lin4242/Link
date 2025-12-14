@@ -52,3 +52,4 @@ playwright-report/
 # Temp
 *.tmp
 /tmp/
+local_*.md
