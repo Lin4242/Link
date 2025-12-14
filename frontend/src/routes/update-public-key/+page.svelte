@@ -25,10 +25,17 @@
 		currentPublicKey = authStore.user?.public_key || '(無)';
 		
 		if (keysStore.secretKey) {
-			// 從現有密鑰計算公鑰
-			const keyPair = nacl.box.keyPair.fromSecretKey(keysStore.secretKey);
-			newPublicKey = encodeBase64(keyPair.publicKey);
-			status = '✅ 已有本地密鑰，可以更新公鑰';
+			try {
+				// 從現有密鑰計算公鑰
+				const secretKeyArray = keysStore.secretKey instanceof Uint8Array ? 
+					keysStore.secretKey : new Uint8Array(keysStore.secretKey);
+				const keyPair = nacl.box.keyPair.fromSecretKey(secretKeyArray);
+				newPublicKey = encodeBase64(keyPair.publicKey);
+				status = '✅ 已有本地密鑰，可以更新公鑰';
+			} catch (e) {
+				console.error('Error computing public key:', e);
+				status = '⚠️ 無法從現有密鑰計算公鑰';
+			}
 		} else {
 			status = '⚠️ 沒有本地密鑰，需要生成或載入';
 		}
@@ -53,7 +60,7 @@
 				const loadedKey = await loadSecretKey(password);
 				
 				if (loadedKey) {
-					secretKey = loadedKey;
+					secretKey = loadedKey instanceof Uint8Array ? loadedKey : new Uint8Array(loadedKey);
 					const keyPair = nacl.box.keyPair.fromSecretKey(secretKey);
 					publicKey = encodeBase64(keyPair.publicKey);
 					status = '✅ 成功載入現有密鑰';
@@ -69,12 +76,13 @@
 						status = '💾 新密鑰已儲存';
 					} catch (e) {
 						console.warn('Failed to save to IndexedDB:', e);
-						sessionStorage.setItem('temp_secret_key', JSON.stringify(Array.from(secretKey)));
+						const secretKeyArray = secretKey instanceof Uint8Array ? secretKey : new Uint8Array(secretKey);
+						sessionStorage.setItem('temp_secret_key', JSON.stringify(Array.from(secretKeyArray)));
 					}
 				}
 				
-				// 更新 keysStore
-				keysStore.secretKey = secretKey;
+				// 更新 keysStore (確保是 Uint8Array)
+				keysStore.secretKey = secretKey instanceof Uint8Array ? secretKey : new Uint8Array(secretKey);
 				keysStore.publicKey = publicKey;
 			}
 			
@@ -124,10 +132,10 @@
 			</div>
 			
 			<div class="mb-4 text-sm text-slate-400">
-				<p class="mb-2">當前用戶：{authStore.user?.nickname}</p>
-				<p class="mb-2">資料庫公鑰：{currentPublicKey.substring(0, 20)}...</p>
+				<p class="mb-2">當前用戶：{authStore.user?.nickname || '未知'}</p>
+				<p class="mb-2">資料庫公鑰：{currentPublicKey && currentPublicKey.length > 20 ? currentPublicKey.substring(0, 20) + '...' : currentPublicKey}</p>
 				{#if newPublicKey}
-					<p>本地公鑰：{newPublicKey.substring(0, 20)}...</p>
+					<p>本地公鑰：{newPublicKey.length > 20 ? newPublicKey.substring(0, 20) + '...' : newPublicKey}</p>
 				{/if}
 			</div>
 			
