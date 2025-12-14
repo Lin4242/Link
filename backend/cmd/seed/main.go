@@ -84,13 +84,13 @@ func main() {
 			"Generate from admin panel and burn to NFC cards (or use URL directly for testing)")
 	}
 
-	// Demo user with NFC cards config - optional
-	demoNickname := getEnv("SEED_DEMO_NICKNAME", "")
-	demoPassword := getEnv("SEED_DEMO_PASSWORD", "")
+	// Demo card pair config - optional (for registration demo flow)
+	demoNickname := getEnv("SEED_DEMO_NICKNAME", "Demo")      // Just for display
+	demoPassword := getEnv("SEED_DEMO_PASSWORD", "(自行設定)") // Just for display
 	demoPrimaryToken := getEnv("SEED_DEMO_PRIMARY_TOKEN", "")
 	demoBackupToken := getEnv("SEED_DEMO_BACKUP_TOKEN", "")
 
-	createDemoUser := demoNickname != "" && demoPassword != "" && demoPrimaryToken != "" && demoBackupToken != ""
+	createDemoUser := demoPrimaryToken != "" && demoBackupToken != ""
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -170,61 +170,20 @@ func main() {
 		log.Fatalf("Failed to create service backup card: %v", err)
 	}
 
-	// Optionally create demo user with NFC cards
-	var demoUserID string
+	// Optionally create demo card pair (unregistered - for demo registration flow)
 	if createDemoUser {
-		log.Printf("Creating demo user: %s", demoNickname)
-		demoHash, err := hashPassword(demoPassword)
-		if err != nil {
-			log.Fatalf("Failed to hash demo password: %v", err)
-		}
+		log.Printf("Creating demo card pair for: %s (unregistered)", demoNickname)
 
-		err = tx.QueryRow(ctx, `
-			INSERT INTO users (nickname, password_hash, public_key)
-			VALUES ($1, $2, $3)
-			RETURNING id
-		`, demoNickname, demoHash, "placeholder-will-be-derived-on-first-login").Scan(&demoUserID)
-		if err != nil {
-			log.Fatalf("Failed to create demo user: %v", err)
-		}
-		log.Printf("Created demo user: %s (ID: %s)", demoNickname, demoUserID)
-
-		// Create card pair
-		log.Println("Creating card pair...")
+		// Only create card_pair - no user, no cards
+		// User will register by scanning the NFC card
 		_, err = tx.Exec(ctx, `
 			INSERT INTO card_pairs (primary_token, backup_token, expires_at)
 			VALUES ($1, $2, NOW() + INTERVAL '365 days')
 		`, demoPrimaryToken, demoBackupToken)
 		if err != nil {
-			log.Fatalf("Failed to create card pair: %v", err)
+			log.Fatalf("Failed to create demo card pair: %v", err)
 		}
-
-		// Create primary card
-		_, err = tx.Exec(ctx, `
-			INSERT INTO cards (user_id, card_token, card_type, status, activated_at)
-			VALUES ($1, $2, 'primary', 'active', NOW())
-		`, demoUserID, demoPrimaryToken)
-		if err != nil {
-			log.Fatalf("Failed to create primary card: %v", err)
-		}
-
-		// Create backup card
-		_, err = tx.Exec(ctx, `
-			INSERT INTO cards (user_id, card_token, card_type, status, activated_at)
-			VALUES ($1, $2, 'backup', 'active', NOW())
-		`, demoUserID, demoBackupToken)
-		if err != nil {
-			log.Fatalf("Failed to create backup card: %v", err)
-		}
-
-		// Auto-friend demo user with service user
-		_, err = tx.Exec(ctx, `
-			INSERT INTO friendships (requester_id, addressee_id, status)
-			VALUES ($1, $2, 'accepted')
-		`, serviceUserID, demoUserID)
-		if err != nil {
-			log.Fatalf("Failed to create friendship: %v", err)
-		}
+		log.Println("Demo card pair created (ready for registration)")
 	}
 
 	// Commit transaction
@@ -249,20 +208,21 @@ func main() {
 	log.Println("")
 
 	if createDemoUser {
-		log.Println("Demo User:")
-		log.Printf("  Nickname: %s", demoNickname)
-		log.Printf("  ID:       %s", demoUserID)
-		log.Printf("  Password: %s", demoPassword)
-		log.Printf("  Primary Card: %s", demoPrimaryToken)
-		log.Printf("  Backup Card:  %s", demoBackupToken)
+		log.Println("Demo Card Pair (未註冊):")
+		log.Printf("  預設暱稱: %s", demoNickname)
+		log.Printf("  預設密碼: %s", demoPassword)
+		log.Printf("  主卡 Token: %s", demoPrimaryToken)
+		log.Printf("  副卡 Token: %s", demoBackupToken)
+		log.Printf("  註冊 URL: %s/w/%s", baseURL, demoPrimaryToken)
 		log.Println("")
-		log.Println("Now you can:")
-		log.Println("1. Tap primary NFC card to login")
-		log.Println("2. Enter password to complete login")
+		log.Println("Demo 流程:")
+		log.Println("1. 刷主卡 → 進入註冊頁面")
+		log.Println("2. 刷副卡 → 配對成功")
+		log.Println("3. 輸入暱稱和密碼完成註冊")
+		log.Println("4. 自動加小安為好友")
 	} else {
-		log.Println("No demo user created (NFC card tokens not provided)")
-		log.Println("To create a demo user, set these environment variables:")
-		log.Println("  SEED_DEMO_NICKNAME, SEED_DEMO_PASSWORD")
+		log.Println("No demo card pair created (tokens not provided)")
+		log.Println("To create demo card pair, set:")
 		log.Println("  SEED_DEMO_PRIMARY_TOKEN, SEED_DEMO_BACKUP_TOKEN")
 	}
 	log.Println("========================================")
