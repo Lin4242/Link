@@ -60,12 +60,12 @@ func (h *AdminHandler) GenerateCardPair(c *fiber.Ctx) error {
 		})
 	}
 
-	// Save to database
+	// Save to database with 30 days expiry
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	_, err = h.db.Exec(ctx,
-		"INSERT INTO card_pairs (primary_token, backup_token) VALUES ($1, $2)",
+		"INSERT INTO card_pairs (primary_token, backup_token, expires_at) VALUES ($1, $2, NOW() + INTERVAL '30 days')",
 		first, second)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
