@@ -14,6 +14,7 @@ export interface DecryptedMessageItem {
 	readAt?: string;
 	pending?: boolean;
 	tempId?: string;
+	decryptFailed?: boolean;
 }
 
 function createMessagesStore() {
@@ -55,7 +56,15 @@ function createMessagesStore() {
 							senderId: m.sender_id,
 							encryptedContentPreview: m.encrypted_content?.substring(0, 50) + '...'
 						});
-						return null;
+						// 顯示解密失敗的訊息，而不是過濾掉
+						return {
+							id: m.id,
+							conversationId: m.conversation_id,
+							senderId: m.sender_id,
+							content: '[無法解密此訊息]',
+							createdAt: m.created_at,
+							decryptFailed: true,
+						} as DecryptedMessageItem;
 					}
 					decryptSuccessCount++;
 					return {
@@ -65,8 +74,7 @@ function createMessagesStore() {
 						content,
 						createdAt: m.created_at,
 					} as DecryptedMessageItem;
-				})
-				.filter((m): m is DecryptedMessageItem => m !== null);
+				});
 
 			console.log('Decryption results:', { decryptSuccessCount, decryptFailCount, totalDecrypted: decrypted.length });
 
@@ -150,35 +158,47 @@ function createMessagesStore() {
 			hasSecretKey: !!keysStore.secretKey,
 			peerPublicKey: peerPublicKey?.substring(0, 10) + '...'
 		});
-		
+
 		if (!keysStore.secretKey) {
 			console.error('❌ No secret key available');
 			return null;
 		}
-		
+
 		const content = decryptFromString(msg.encrypted_content, peerPublicKey, keysStore.secretKey);
+		let decrypted: DecryptedMessageItem;
+
 		if (!content) {
 			console.error('❌ Failed to decrypt message:', {
 				msgId: msg.id,
 				encryptedContent: JSON.stringify(msg.encrypted_content).substring(0, 100) + '...'
 			});
-			return null;
+			// 顯示解密失敗的訊息
+			decrypted = {
+				id: msg.id,
+				conversationId: msg.conversation_id,
+				senderId: msg.sender_id,
+				content: '[無法解密此訊息]',
+				createdAt: msg.created_at,
+				deliveredAt: msg.delivered_at,
+				readAt: msg.read_at,
+				decryptFailed: true,
+			};
+		} else {
+			console.log('✅ Message decrypted successfully:', {
+				msgId: msg.id,
+				contentLength: content.length
+			});
+			decrypted = {
+				id: msg.id,
+				conversationId: msg.conversation_id,
+				senderId: msg.sender_id,
+				content,
+				createdAt: msg.created_at,
+				deliveredAt: msg.delivered_at,
+				readAt: msg.read_at,
+			};
 		}
-		
-		console.log('✅ Message decrypted successfully:', {
-			msgId: msg.id,
-			contentLength: content.length
-		});
-		
-		const decrypted: DecryptedMessageItem = {
-			id: msg.id,
-			conversationId: msg.conversation_id,
-			senderId: msg.sender_id,
-			content,
-			createdAt: msg.created_at,
-			deliveredAt: msg.delivered_at,
-			readAt: msg.read_at,
-		};
+
 		addMessage(msg.conversation_id, decrypted);
 		return decrypted;
 	}

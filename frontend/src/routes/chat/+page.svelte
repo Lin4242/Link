@@ -240,8 +240,8 @@
 			const tempId = crypto.randomUUID();
 			const peerPubKey = activeConversation.peer.public_key;
 
-			if (!peerPubKey) {
-				alert('Peer has no public key!');
+			if (!peerPubKey || peerPubKey.startsWith('placeholder')) {
+				alert('對方尚未設定加密金鑰，無法發送訊息。請等待對方登入並設定金鑰。');
 				sending = false;
 				return;
 			}
@@ -305,7 +305,7 @@
 {#if privacyScreen}
 <div class="fixed inset-0 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center z-[100]">
 	<div class="text-center text-white w-full max-w-xs px-6">
-		<div class="w-16 h-16 mx-auto mb-4 rounded-xl flex items-center justify-center shadow-lg" style="background: linear-gradient(135deg, #3ACACA, #2BA3A3); box-shadow: 0 10px 15px -3px rgba(58, 202, 202, 0.3);">
+		<div class="w-16 h-16 mx-auto mb-4 rounded-md flex items-center justify-center shadow-lg" style="background: linear-gradient(135deg, #3ACACA, #2BA3A3); box-shadow: 0 10px 15px -3px rgba(58, 202, 202, 0.3);">
 			<svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
 			</svg>
@@ -329,10 +329,10 @@
 				type="password"
 				name="privacyPwd"
 				placeholder="輸入密碼"
-				class="w-full px-4 py-3 rounded-xl bg-slate-700/50 text-white placeholder-slate-500 border border-white/10 focus:outline-none focus:ring-2 mb-3"
+				class="w-full px-4 py-3 rounded-md bg-slate-700/50 text-white placeholder-slate-500 border border-white/10 focus:outline-none focus:ring-2 mb-3"
 				style="--tw-ring-color: rgba(58, 202, 202, 0.5);"
 			/>
-			<button type="submit" class="w-full py-3 text-white font-medium rounded-xl shadow-lg" style="background: linear-gradient(to right, #3ACACA, #2BA3A3); box-shadow: 0 10px 15px -3px rgba(58, 202, 202, 0.2);">
+			<button type="submit" class="w-full py-3 text-white font-medium rounded-md shadow-lg" style="background: linear-gradient(to right, #3ACACA, #2BA3A3); box-shadow: 0 10px 15px -3px rgba(58, 202, 202, 0.2);">
 				解鎖
 			</button>
 		</form>
@@ -343,7 +343,7 @@
 <!-- Key unlock modal -->
 {#if transportStore.connected && !keysStore.secretKey}
 <div class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-	<div class="bg-slate-800 rounded-xl p-6 max-w-sm w-full border border-white/10 shadow-xl">
+	<div class="bg-slate-800 rounded-md p-6 max-w-sm w-full border border-white/10 shadow-xl">
 		<h2 class="text-lg font-bold text-white mb-2">載入加密金鑰</h2>
 		<p class="text-sm text-slate-400 mb-5">請輸入密碼以存取您的加密訊息</p>
 		<form onsubmit={async (e) => {
@@ -354,67 +354,62 @@
 				alert('請輸入密碼');
 				return;
 			}
+			if (!authStore.user?.id) {
+				alert('用戶資料不完整，請重新登入');
+				return;
+			}
 			console.log('Attempting to unlock key with password...');
 
-			// 方法1: 先嘗試從 IndexedDB 載入（舊方式，為了相容性）
-			let success = await keysStore.unlock(pwd);
-			console.log('IndexedDB unlock result:', success);
+			// 永遠從密碼推導金鑰並驗證（不再依賴 IndexedDB）
+			const { deriveKeyPairFromPassword, saveSecretKey } = await import('$lib/crypto/keys');
+			const { publicKey, secretKey } = await deriveKeyPairFromPassword(pwd, authStore.user.id);
+			console.log('Derived public key:', publicKey);
 
-			if (!success && authStore.user?.id) {
-				// 方法2: 從密碼 + 用戶ID 推導金鑰（新方式，支援多裝置）
-				console.log('Deriving key from password + userId...');
-				const { deriveKeyPairFromPassword, saveSecretKey } = await import('$lib/crypto/keys');
-				const { publicKey, secretKey } = await deriveKeyPairFromPassword(pwd, authStore.user.id);
-				console.log('Derived public key:', publicKey);
+			const serverPublicKey = authStore.user.public_key;
+			console.log('Server public key:', serverPublicKey);
 
-				// 檢查伺服器上的公鑰
-				const serverPublicKey = authStore.user.public_key;
-				console.log('Server public key:', serverPublicKey);
-
-				if (serverPublicKey === publicKey) {
-					// 密碼正確，金鑰匹配
-					console.log('✅ Derived key matches server!');
-					await saveSecretKey(secretKey, pwd);
-					await keysStore.save(secretKey, pwd);
-					success = true;
-				} else if (serverPublicKey?.startsWith('placeholder')) {
-					// 首次登入，自動設定公鑰（不彈窗）
-					console.log('📝 First login - setting public key automatically');
-					await saveSecretKey(secretKey, pwd);
-					await keysStore.save(secretKey, pwd);
-					const { updateMe } = await import('$lib/api/users');
-					await updateMe({ public_key: publicKey });
-					success = true;
-				} else {
-					// 公鑰不匹配且不是 placeholder - 密碼錯誤
-					console.error('❌ Key mismatch - wrong password or account issue');
-					alert('密碼錯誤或金鑰不匹配。請確認密碼正確。');
-				}
+			let success = false;
+			if (serverPublicKey === publicKey) {
+				// 密碼正確，金鑰匹配
+				console.log('✅ Derived key matches server!');
+				await saveSecretKey(secretKey, pwd);
+				await keysStore.save(secretKey, pwd);
+				success = true;
+			} else if (serverPublicKey?.startsWith('placeholder')) {
+				// 首次登入或公鑰未設定，自動更新伺服器
+				console.log('📝 Setting public key on server');
+				await saveSecretKey(secretKey, pwd);
+				await keysStore.save(secretKey, pwd);
+				const { updateMe } = await import('$lib/api/users');
+				await updateMe({ public_key: publicKey });
+				// 更新本地 user 資料
+				authStore.updateUser({ public_key: publicKey });
+				success = true;
+			} else {
+				// 公鑰不匹配 - 密碼錯誤
+				console.error('❌ Key mismatch - wrong password');
+				alert('密碼錯誤，請重新輸入。');
 			}
 
 			if (success) {
 				console.log('Key unlocked successfully!');
-				// Reload messages if there's an active conversation
 				if (activeConversation) {
-					console.log('Reloading messages for active conversation:', activeConversation.id);
 					await messagesStore.loadMessages(
 						activeConversation.id,
 						activeConversation.peer.public_key
 					);
 				}
-			} else {
-				alert('密碼錯誤，請重新輸入。');
 			}
 		}}>
 			<input
 				type="password"
 				name="unlockPwd"
 				placeholder="輸入密碼"
-				class="w-full px-4 py-3 bg-slate-700/50 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 mb-4"
+				class="w-full px-4 py-3 bg-slate-700/50 border border-white/10 rounded-md text-white placeholder-slate-500 focus:outline-none focus:ring-2 mb-4"
 				style="--tw-ring-color: rgba(58, 202, 202, 0.5);"
 				autofocus
 			/>
-			<button type="submit" class="w-full text-white py-3 rounded-xl font-medium shadow-lg" style="background: linear-gradient(to right, #3ACACA, #2BA3A3); box-shadow: 0 10px 15px -3px rgba(58, 202, 202, 0.2);">
+			<button type="submit" class="w-full text-white py-3 rounded-md font-medium shadow-lg" style="background: linear-gradient(to right, #3ACACA, #2BA3A3); box-shadow: 0 10px 15px -3px rgba(58, 202, 202, 0.2);">
 				確認
 			</button>
 		</form>
@@ -428,7 +423,7 @@
 		<!-- Header -->
 		<div class="p-4 border-b border-white/5 flex items-center justify-between">
 			<div class="flex items-center gap-3">
-				<div class="w-10 h-10 rounded-xl flex items-center justify-center text-white font-medium shadow-lg" style="background: linear-gradient(135deg, #3ACACA, #2BA3A3); box-shadow: 0 10px 15px -3px rgba(58, 202, 202, 0.2);">
+				<div class="w-10 h-10 rounded-md flex items-center justify-center text-white font-medium shadow-lg" style="background: linear-gradient(135deg, #3ACACA, #2BA3A3); box-shadow: 0 10px 15px -3px rgba(58, 202, 202, 0.2);">
 					{authStore.user?.nickname?.[0] || '?'}
 				</div>
 				<div>
@@ -439,7 +434,7 @@
 					</p>
 				</div>
 			</div>
-			<button onclick={logout} class="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors" title="登出">
+			<button onclick={logout} class="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-md transition-colors" title="登出">
 				<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
 				</svg>
@@ -462,9 +457,9 @@
 						{#each friendsStore.friends as friend}
 							<button
 								onclick={() => startChatWithFriend(friend)}
-								class="w-full p-3 flex items-center gap-3 hover:bg-white/5 transition-colors rounded-lg"
+								class="w-full p-3 flex items-center gap-3 hover:bg-white/5 transition-colors rounded-md"
 							>
-								<div class="w-10 h-10 bg-slate-700 rounded-xl flex items-center justify-center text-sm font-medium text-white">
+								<div class="w-10 h-10 bg-slate-700 rounded-md flex items-center justify-center text-sm font-medium text-white">
 									{friend.user.nickname[0]}
 								</div>
 								<div class="flex-1 text-left">
@@ -483,7 +478,7 @@
 						style={conversationsStore.activeConversationId === conv.id ? 'background-color: rgba(58, 202, 202, 0.1);' : ''}
 					>
 						<div class="relative">
-							<div class="w-12 h-12 bg-slate-700 rounded-xl flex items-center justify-center text-lg font-medium text-white">
+							<div class="w-12 h-12 bg-slate-700 rounded-md flex items-center justify-center text-lg font-medium text-white">
 								{conv.peer.nickname[0]}
 							</div>
 							{#if friendsStore.friends.find((f) => f.id === conv.peer.id)?.isOnline}
@@ -530,7 +525,7 @@
 		{#if !activeConversation}
 			<div class="flex-1 flex items-center justify-center">
 				<div class="text-center">
-					<div class="w-16 h-16 mx-auto mb-4 bg-slate-800 rounded-xl flex items-center justify-center">
+					<div class="w-16 h-16 mx-auto mb-4 bg-slate-800 rounded-md flex items-center justify-center">
 						<svg class="w-8 h-8 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
 						</svg>
@@ -551,7 +546,7 @@
 					</svg>
 				</button>
 				<div class="relative">
-					<div class="w-10 h-10 bg-slate-700 rounded-xl flex items-center justify-center font-medium text-white">
+					<div class="w-10 h-10 bg-slate-700 rounded-md flex items-center justify-center font-medium text-white">
 						{activeConversation.peer.nickname[0]}
 					</div>
 					{#if friendsStore.friends.find((f) => f.id === activeConversation.peer.id)?.isOnline}
@@ -584,7 +579,7 @@
 					<div class="text-center text-slate-500 py-4">載入訊息中...</div>
 				{:else if messages.length === 0}
 					<div class="text-center py-12">
-						<div class="w-14 h-14 mx-auto mb-3 bg-slate-800 rounded-xl flex items-center justify-center">
+						<div class="w-14 h-14 mx-auto mb-3 bg-slate-800 rounded-md flex items-center justify-center">
 							<svg class="w-7 h-7 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
 							</svg>
@@ -596,33 +591,48 @@
 					{#each messages as msg}
 						{@const isOwn = msg.senderId === authStore.user?.id}
 						<div class="flex {isOwn ? 'justify-end' : 'justify-start'}">
-							<button
-								type="button"
-								onclick={async () => {
-									console.log('Message clicked!', { isOwn, pending: msg.pending, hasConv: !!activeConversation, msgId: msg.id });
-									if (isOwn && !msg.pending && activeConversation) {
-										console.log('Deleting message:', msg.id);
-										const result = await messagesStore.deleteMessage(activeConversation.id, msg.id);
-										console.log('Delete result:', result);
-									} else {
-										console.log('Cannot delete:', { isOwn, pending: msg.pending, hasConv: !!activeConversation });
-									}
-								}}
-								class="max-w-[75%] {isOwn ? 'text-white' : 'bg-slate-800 text-white'} rounded-xl px-4 py-2.5 shadow-lg text-left
-									{msg.pending ? 'opacity-60' : ''} {isOwn ? 'active:scale-95' : 'shadow-black/20'} transition-all"
-								style={isOwn ? 'background: linear-gradient(to right, #3ACACA, #2BA3A3); box-shadow: 0 10px 15px -3px rgba(58, 202, 202, 0.1);' : ''}
-								onmouseenter={(e) => isOwn && !msg.pending && (e.currentTarget.style.background = 'linear-gradient(to right, #2BA3A3, #238B8B)')}
-								onmouseleave={(e) => isOwn && !msg.pending && (e.currentTarget.style.background = 'linear-gradient(to right, #3ACACA, #2BA3A3)')}
-								disabled={!isOwn || msg.pending}
-							>
-								<p class="break-words whitespace-pre-wrap text-sm">{msg.content}</p>
-								<p class="text-xs mt-1 text-right" style={isOwn ? 'color: rgba(58, 202, 202, 0.7);' : 'color: #64748b;'}>
-									{formatTime(msg.createdAt)}
-									{#if isOwn && msg.pending}
-										<span class="ml-1">...</span>
-									{/if}
-								</p>
-							</button>
+							<div class="relative max-w-[75%]">
+								<button
+									type="button"
+									onclick={async () => {
+										console.log('Message clicked!', { isOwn, pending: msg.pending, hasConv: !!activeConversation, msgId: msg.id });
+										if (isOwn && !msg.pending && activeConversation) {
+											console.log('Deleting message:', msg.id);
+											const result = await messagesStore.deleteMessage(activeConversation.id, msg.id);
+											console.log('Delete result:', result);
+										} else {
+											console.log('Cannot delete:', { isOwn, pending: msg.pending, hasConv: !!activeConversation });
+										}
+									}}
+									class="w-full {isOwn ? 'text-white' : 'bg-slate-800 text-white'} rounded-md px-4 py-2.5 shadow-lg text-left
+										{msg.pending ? 'opacity-60' : ''} {msg.decryptFailed ? 'opacity-70 border border-red-500/30' : ''} {isOwn ? 'active:scale-95' : 'shadow-black/20'} transition-all"
+									style={isOwn && !msg.decryptFailed ? 'background: linear-gradient(to right, #2A9A9A, #1E8080); box-shadow: 0 10px 15px -3px rgba(42, 154, 154, 0.15);' : msg.decryptFailed ? 'background: rgba(239, 68, 68, 0.1);' : ''}
+									onmouseenter={(e) => isOwn && !msg.pending && !msg.decryptFailed && (e.currentTarget.style.background = 'linear-gradient(to right, #238B8B, #1A7070)')}
+									onmouseleave={(e) => isOwn && !msg.pending && !msg.decryptFailed && (e.currentTarget.style.background = 'linear-gradient(to right, #2A9A9A, #1E8080)')}
+									disabled={!isOwn || msg.pending}
+								>
+									<p class="break-words whitespace-pre-wrap text-sm {msg.decryptFailed ? 'text-red-400 italic' : ''}">{msg.content}</p>
+									<p class="text-xs mt-1 text-right" style={isOwn ? 'color: rgba(255, 255, 255, 0.6);' : 'color: #64748b;'}>
+										{formatTime(msg.createdAt)}
+										{#if isOwn && msg.pending}
+											<span class="ml-1">...</span>
+										{/if}
+									</p>
+								</button>
+								<!-- 泡泡尖角 (LINE 風格圓滑曲線) -->
+								{#if !msg.decryptFailed}
+									<svg
+										class="absolute bottom-0 w-3 h-4 {isOwn ? '-right-2' : '-left-2'}"
+										viewBox="0 0 12 16"
+										style={isOwn ? 'transform: scaleX(1);' : 'transform: scaleX(-1);'}
+									>
+										<path
+											d="M0 0 L0 12 Q0 16, 4 16 L12 16 Q4 16, 4 8 Q4 0, 0 0 Z"
+											fill={isOwn ? '#1E8080' : '#1e293b'}
+										/>
+									</svg>
+								{/if}
+							</div>
 						</div>
 					{/each}
 				{/if}
@@ -646,14 +656,14 @@
 						onkeydown={handleKeydown}
 						oninput={handleTyping}
 						placeholder="輸入訊息..."
-						class="flex-1 px-4 py-3 bg-slate-700/50 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2"
+						class="flex-1 px-4 py-3 bg-slate-700/50 border border-white/10 rounded-md text-white placeholder-slate-500 focus:outline-none focus:ring-2"
 						style="--tw-ring-color: rgba(58, 202, 202, 0.5);"
 						disabled={sending}
 					/>
 					<button
 						type="submit"
 						disabled={!messageInput.trim() || sending || !transportStore.connected || !keysStore.secretKey}
-						class="w-12 h-12 text-white rounded-xl flex items-center justify-center transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-lg"
+						class="w-12 h-12 text-white rounded-md flex items-center justify-center transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-lg"
 						style="background: linear-gradient(to right, #3ACACA, #2BA3A3); box-shadow: 0 10px 15px -3px rgba(58, 202, 202, 0.2);"
 						onmouseenter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.background = 'linear-gradient(to right, #2BA3A3, #238B8B)')}
 						onmouseleave={(e) => !e.currentTarget.disabled && (e.currentTarget.style.background = 'linear-gradient(to right, #3ACACA, #2BA3A3)')}

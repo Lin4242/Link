@@ -130,7 +130,7 @@
 <div class="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-6">
 	<div class="w-full max-w-sm">
 		<div class="text-center mb-8">
-			<div class="w-14 h-14 mx-auto mb-4 bg-gradient-to-br from-amber-400 to-orange-600 rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/30">
+			<div class="w-14 h-14 mx-auto mb-4 bg-gradient-to-br from-amber-400 to-orange-600 rounded-md flex items-center justify-center shadow-lg shadow-orange-500/30">
 				<svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
 				</svg>
@@ -139,8 +139,8 @@
 			<p class="text-slate-400 text-sm mt-1">Backup Card Login</p>
 		</div>
 
-		<div class="bg-slate-800/50 backdrop-blur rounded-xl p-6 border border-white/10">
-			<div class="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 mb-6">
+		<div class="bg-slate-800/50 backdrop-blur rounded-md p-6 border border-white/10">
+			<div class="bg-amber-500/10 border border-amber-500/20 rounded-md p-4 mb-6">
 				<p class="text-amber-400 text-sm">
 					您正在使用附卡（備援卡）。登入後，您的主卡將被<span class="font-bold">永久撤銷</span>。
 				</p>
@@ -168,7 +168,7 @@
 							id="password"
 							type="password"
 							bind:value={password}
-							class="w-full px-4 py-3 bg-slate-700/50 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50"
+							class="w-full px-4 py-3 bg-slate-700/50 border border-white/10 rounded-md text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50"
 							placeholder="輸入密碼"
 						/>
 					</div>
@@ -176,7 +176,7 @@
 					<button
 						type="submit"
 						disabled={loading}
-						class="w-full bg-gradient-to-r from-amber-500 to-orange-600 text-white py-3 rounded-xl font-medium hover:from-amber-600 hover:to-orange-700 transition-all disabled:opacity-50 shadow-lg shadow-orange-500/20"
+						class="w-full bg-gradient-to-r from-amber-500 to-orange-600 text-white py-3 rounded-md font-medium hover:from-amber-600 hover:to-orange-700 transition-all disabled:opacity-50 shadow-lg shadow-orange-500/20"
 					>
 						繼續
 					</button>
@@ -191,7 +191,7 @@
 			{/if}
 
 			{#if error}
-				<div class="mt-4 p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl text-sm">
+				<div class="mt-4 p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-md text-sm">
 					{error}
 				</div>
 			{/if}

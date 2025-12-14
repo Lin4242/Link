@@ -163,7 +163,7 @@
 <div class="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-6">
 	<div class="w-full max-w-sm">
 		<div class="text-center mb-8">
-			<div class="w-14 h-14 mx-auto mb-4 rounded-xl flex items-center justify-center shadow-lg" style="background: linear-gradient(135deg, #3ACACA, #2BA3A3); box-shadow: 0 10px 15px -3px rgba(58, 202, 202, 0.3);">
+			<div class="w-14 h-14 mx-auto mb-4 rounded-md flex items-center justify-center shadow-lg" style="background: linear-gradient(135deg, #3ACACA, #2BA3A3); box-shadow: 0 10px 15px -3px rgba(58, 202, 202, 0.3);">
 				<svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
 				</svg>
@@ -171,7 +171,7 @@
 			<h1 class="text-xl font-bold text-white tracking-tight">LINK</h1>
 		</div>
 
-		<div class="bg-slate-800/50 backdrop-blur rounded-xl p-6 border border-white/10">
+		<div class="bg-slate-800/50 backdrop-blur rounded-md p-6 border border-white/10">
 			{#if step === 'loading'}
 				<div class="text-center py-8">
 					<div class="animate-spin w-8 h-8 border-2 border-t-transparent rounded-full mx-auto mb-4" style="border-color: #3ACACA; border-top-color: transparent;"></div>
@@ -179,7 +179,7 @@
 				</div>
 			{:else if step === 'need_both'}
 				<div class="text-center py-4">
-					<div class="w-16 h-16 mx-auto mb-4 rounded-xl flex items-center justify-center" style="background-color: rgba(58, 202, 202, 0.1);">
+					<div class="w-16 h-16 mx-auto mb-4 rounded-md flex items-center justify-center" style="background-color: rgba(58, 202, 202, 0.1);">
 						<svg class="w-8 h-8" style="color: #3ACACA;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4" />
 						</svg>
@@ -189,14 +189,14 @@
 				</div>
 			{:else if step === 'scan_backup'}
 				<div class="text-center py-2">
-					<div class="w-12 h-12 mx-auto mb-3 bg-emerald-500/20 rounded-xl flex items-center justify-center">
+					<div class="w-12 h-12 mx-auto mb-3 bg-emerald-500/20 rounded-md flex items-center justify-center">
 						<svg class="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
 						</svg>
 					</div>
 					<p class="text-emerald-400 font-medium text-sm mb-4">主卡已掃描</p>
 
-					<div class="w-14 h-14 mx-auto mb-4 bg-amber-500/10 rounded-xl flex items-center justify-center">
+					<div class="w-14 h-14 mx-auto mb-4 bg-amber-500/10 rounded-md flex items-center justify-center">
 						<svg class="w-7 h-7 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4" />
 						</svg>
@@ -206,7 +206,7 @@
 
 					<button
 						onclick={skipBackupCard}
-						class="w-full bg-slate-700/50 text-slate-300 py-3 rounded-xl text-sm hover:bg-slate-700 transition-colors border border-white/5"
+						class="w-full bg-slate-700/50 text-slate-300 py-3 rounded-md text-sm hover:bg-slate-700 transition-colors border border-white/5"
 					>
 						不需要副卡
 					</button>
@@ -231,7 +231,7 @@
 							id="nickname"
 							type="text"
 							bind:value={nickname}
-							class="w-full px-4 py-3 bg-slate-700/50 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2"
+							class="w-full px-4 py-3 bg-slate-700/50 border border-white/10 rounded-md text-white placeholder-slate-500 focus:outline-none focus:ring-2"
 							style="--tw-ring-color: rgba(58, 202, 202, 0.5);"
 							placeholder="您的顯示名稱"
 							maxlength="50"
@@ -244,7 +244,7 @@
 							id="password"
 							type="password"
 							bind:value={password}
-							class="w-full px-4 py-3 bg-slate-700/50 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2"
+							class="w-full px-4 py-3 bg-slate-700/50 border border-white/10 rounded-md text-white placeholder-slate-500 focus:outline-none focus:ring-2"
 							style="--tw-ring-color: rgba(58, 202, 202, 0.5);"
 							placeholder="設定您的密碼"
 						/>
@@ -256,7 +256,7 @@
 							id="confirmPassword"
 							type="password"
 							bind:value={confirmPassword}
-							class="w-full px-4 py-3 bg-slate-700/50 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2"
+							class="w-full px-4 py-3 bg-slate-700/50 border border-white/10 rounded-md text-white placeholder-slate-500 focus:outline-none focus:ring-2"
 							style="--tw-ring-color: rgba(58, 202, 202, 0.5);"
 							placeholder="再次輸入密碼"
 						/>
@@ -265,7 +265,7 @@
 					<button
 						type="submit"
 						disabled={loading}
-						class="w-full text-white py-3 rounded-xl font-medium transition-all disabled:opacity-50 shadow-lg mt-2"
+						class="w-full text-white py-3 rounded-md font-medium transition-all disabled:opacity-50 shadow-lg mt-2"
 						style="background: linear-gradient(to right, #3ACACA, #2BA3A3); box-shadow: 0 10px 15px -3px rgba(58, 202, 202, 0.2);"
 						onmouseenter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.background = 'linear-gradient(to right, #2BA3A3, #238B8B)')}
 						onmouseleave={(e) => !e.currentTarget.disabled && (e.currentTarget.style.background = 'linear-gradient(to right, #3ACACA, #2BA3A3)')}
@@ -276,7 +276,7 @@
 			{/if}
 
 			{#if error}
-				<div class="mt-4 p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl text-sm">
+				<div class="mt-4 p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-md text-sm">
 					{error}
 				</div>
 			{/if}
