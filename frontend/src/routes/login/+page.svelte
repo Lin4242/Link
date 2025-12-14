@@ -37,13 +37,19 @@
 			return;
 		}
 
-		if (res.data?.status === 'not_found') {
+		if (res.data?.status === 'not_found' || res.data?.status === 'can_register') {
 			goto(`/register/start?token=${cardToken}`);
 			return;
 		}
 
 		if (res.data?.status === 'revoked') {
 			error = '此卡片已被撤銷';
+			loading = false;
+			return;
+		}
+
+		if (res.data?.status === 'pair_already_registered') {
+			error = '此卡片組已被註冊';
 			loading = false;
 			return;
 		}
