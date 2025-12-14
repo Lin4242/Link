@@ -71,11 +71,23 @@ function createMessagesStore() {
 			console.log('Decryption results:', { decryptSuccessCount, decryptFailCount, totalDecrypted: decrypted.length });
 
 			const existing = messagesByConversation[conversationId] || [];
+			// FORCE REACTIVITY - must create new object
 			if (before) {
-				messagesByConversation[conversationId] = [...decrypted, ...existing];
+				messagesByConversation = {
+					...messagesByConversation,
+					[conversationId]: [...decrypted, ...existing]
+				};
 			} else {
-				messagesByConversation[conversationId] = decrypted;
+				messagesByConversation = {
+					...messagesByConversation,
+					[conversationId]: decrypted
+				};
 			}
+			console.log('📚 Messages loaded and stored:', {
+				conversationId,
+				totalMessages: messagesByConversation[conversationId].length,
+				firstMsg: messagesByConversation[conversationId][0]?.content?.substring(0, 20)
+			});
 		} else {
 			console.log('Skipping decryption - no data or no secret key', {
 				hasData: !!res.data,
@@ -172,7 +184,17 @@ function createMessagesStore() {
 	}
 
 	function getMessages(conversationId: string): DecryptedMessageItem[] {
-		return messagesByConversation[conversationId] || [];
+		const messages = messagesByConversation[conversationId] || [];
+		console.log('🔍 getMessages called:', {
+			conversationId,
+			messagesCount: messages.length,
+			allConversations: Object.keys(messagesByConversation),
+			messagesInStore: Object.entries(messagesByConversation).map(([id, msgs]) => ({
+				convId: id,
+				count: msgs.length
+			}))
+		});
+		return messages;
 	}
 
 	function clear(): void {
