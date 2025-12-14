@@ -9,6 +9,41 @@ export function generateKeyPair(): { publicKey: string; secretKey: Uint8Array } 
 	return { publicKey: encodeBase64(kp.publicKey), secretKey: kp.secretKey };
 }
 
+/**
+ * 從密碼和用戶 ID 推導出確定性的金鑰對
+ * 同樣的密碼 + 用戶 ID 在任何裝置上都會產生相同的金鑰對
+ */
+export async function deriveKeyPairFromPassword(
+	password: string,
+	userId: string
+): Promise<{ publicKey: string; secretKey: Uint8Array }> {
+	// 使用 userId 作為 salt，確保同一用戶的金鑰一致
+	const salt = new TextEncoder().encode(`link-e2e-${userId}`);
+
+	const keyMaterial = await crypto.subtle.importKey(
+		'raw',
+		new TextEncoder().encode(password),
+		'PBKDF2',
+		false,
+		['deriveBits']
+	);
+
+	// 推導 32 bytes 作為 NaCl 的 secret key
+	const bits = await crypto.subtle.deriveBits(
+		{ name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
+		keyMaterial,
+		256
+	);
+
+	const secretKey = new Uint8Array(bits);
+	const keyPair = nacl.box.keyPair.fromSecretKey(secretKey);
+
+	return {
+		publicKey: encodeBase64(keyPair.publicKey),
+		secretKey: keyPair.secretKey
+	};
+}
+
 export async function saveSecretKey(secretKey: Uint8Array, password: string): Promise<void> {
 	const salt = nacl.randomBytes(16);
 	const key = await deriveKey(password, salt);

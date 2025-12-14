@@ -102,14 +102,15 @@
 		loading = true;
 		error = '';
 
-		const keyPair = generateKeyPair();
+		// 先用臨時金鑰註冊
+		const tempKeyPair = generateKeyPair();
 
 		const res = await authApi.register({
 			primary_token: primaryToken,
 			backup_token: backupToken,
 			password,
 			nickname: nickname.trim(),
-			public_key: keyPair.publicKey,
+			public_key: tempKeyPair.publicKey,
 		});
 
 		if (res.error) {
@@ -123,32 +124,25 @@
 			localStorage.removeItem('register_first_card');
 			localStorage.removeItem('register_paired_token');
 
-			// Try to save secret key (may fail on non-HTTPS)
-			let keyStored = false;
+			// 取得 userId 後，用密碼推導確定性金鑰
+			const { deriveKeyPairFromPassword } = await import('$lib/crypto/keys');
+			const derivedKeyPair = await deriveKeyPairFromPassword(password, res.data.user.id);
+			console.log('✅ Derived keypair from password + userId');
+
+			// 更新伺服器上的公鑰為推導的公鑰
+			const { updateMe } = await import('$lib/api/users');
+			await updateMe({ public_key: derivedKeyPair.publicKey });
+			console.log('✅ Updated server with derived public key');
+
+			// 儲存推導的私鑰
 			try {
-				await saveSecretKey(keyPair.secretKey, password);
-				keyStored = true;
-				console.log('✅ Secret key saved to IndexedDB');
+				await saveSecretKey(derivedKeyPair.secretKey, password);
+				console.log('✅ Derived secret key saved to IndexedDB');
 			} catch (e) {
 				console.warn('Failed to save secret key to IndexedDB:', e);
-				// Store in both sessionStorage and localStorage for better persistence
-				try {
-					const keyData = JSON.stringify(Array.from(keyPair.secretKey));
-					sessionStorage.setItem('temp_secret_key', keyData);
-					localStorage.setItem(`temp_key_${res.data.user.id}`, keyData);
-					console.log('⚠️ Secret key saved to temporary storage');
-				} catch (storageError) {
-					console.error('Failed to save key to any storage:', storageError);
-					alert('⚠️ 警告：無法儲存加密密鑰。請確保使用 HTTPS 連線或聯絡管理員。');
-				}
 			}
 
 			authStore.login(res.data.user, res.data.token);
-			
-			// Always go to chat - it will handle key unlock/regeneration
-			if (!keyStored) {
-				console.warn('⚠️ Key storage failed - chat page will prompt for key setup');
-			}
 			window.location.replace('/chat');
 		}
 	}

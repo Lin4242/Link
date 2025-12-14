@@ -312,34 +312,54 @@
 				return;
 			}
 			console.log('Attempting to unlock key with password...');
-			// Try to unlock first
+
+			// 方法1: 先嘗試從 IndexedDB 載入（舊方式，為了相容性）
 			let success = await keysStore.unlock(pwd);
-			console.log('Unlock result:', success);
-			if (!success) {
-				// Warn user that old messages will be lost
-				const confirmed = confirm('密碼錯誤或金鑰不存在。是否要產生新的金鑰？\n\n警告：這將導致舊訊息無法解密！');
-				if (!confirmed) {
-					return;
+			console.log('IndexedDB unlock result:', success);
+
+			if (!success && authStore.user?.id) {
+				// 方法2: 從密碼 + 用戶ID 推導金鑰（新方式，支援多裝置）
+				console.log('Deriving key from password + userId...');
+				const { deriveKeyPairFromPassword, saveSecretKey } = await import('$lib/crypto/keys');
+				const { publicKey, secretKey } = await deriveKeyPairFromPassword(pwd, authStore.user.id);
+				console.log('Derived public key:', publicKey);
+
+				// 檢查伺服器上的公鑰
+				const serverPublicKey = authStore.user.public_key;
+				console.log('Server public key:', serverPublicKey);
+
+				if (serverPublicKey === publicKey) {
+					// 密碼正確，金鑰匹配
+					console.log('✅ Derived key matches server!');
+					await saveSecretKey(secretKey, pwd);
+					await keysStore.save(secretKey, pwd);
+					success = true;
+				} else {
+					// 密碼可能錯誤，或需要更新伺服器金鑰
+					const confirmed = confirm('金鑰不匹配。是否要更新為新金鑰？\n\n注意：這會讓舊訊息無法解密，但可以在任何裝置登入。');
+					if (confirmed) {
+						await saveSecretKey(secretKey, pwd);
+						await keysStore.save(secretKey, pwd);
+						const { updateMe } = await import('$lib/api/users');
+						await updateMe({ public_key: publicKey });
+						alert('金鑰已更新！現在可以在任何裝置使用相同密碼登入。');
+						success = true;
+					}
 				}
-				// Generate new keys
-				const { generateKeyPair, saveSecretKey } = await import('$lib/crypto/keys');
-				const { publicKey, secretKey } = generateKeyPair();
-				await saveSecretKey(secretKey, pwd);
-				await keysStore.save(secretKey, pwd);
-				// Update public key on server
-				const { updateMe } = await import('$lib/api/users');
-				await updateMe({ public_key: publicKey });
-				alert('金鑰已重新產生。舊訊息將無法解密。');
-			} else {
-				console.log('Key unlocked successfully!');
 			}
-			// Reload messages if there's an active conversation
-			if (activeConversation) {
-				console.log('Reloading messages for active conversation:', activeConversation.id);
-				await messagesStore.loadMessages(
-					activeConversation.id,
-					activeConversation.peer.public_key
-				);
+
+			if (success) {
+				console.log('Key unlocked successfully!');
+				// Reload messages if there's an active conversation
+				if (activeConversation) {
+					console.log('Reloading messages for active conversation:', activeConversation.id);
+					await messagesStore.loadMessages(
+						activeConversation.id,
+						activeConversation.peer.public_key
+					);
+				}
+			} else {
+				alert('無法解鎖金鑰，請確認密碼是否正確。');
 			}
 		}}>
 			<input
