@@ -10,7 +10,8 @@ test('Chat page message delivery', async ({ page }) => {
   });
 
   // First we need to set up auth - simulate login by setting localStorage
-  await page.goto('https://192.168.1.99:5173');
+  const baseUrl = process.env.TEST_URL || 'http://localhost:5173';
+  await page.goto(baseUrl);
   await page.waitForTimeout(1000);
 
   // Generate a valid JWT token
@@ -46,7 +47,7 @@ test('Chat page message delivery', async ({ page }) => {
   console.log('Token set:', token.substring(0, 30) + '...');
 
   // Navigate to chat page
-  await page.goto('https://192.168.1.99:5173/chat');
+  await page.goto(`${baseUrl}/chat`);
   await page.waitForTimeout(3000);
 
   // Check console logs for transport connection

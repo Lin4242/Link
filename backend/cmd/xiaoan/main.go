@@ -17,7 +17,8 @@ import (
 const (
 	jwtSecret = "adab22111811be224304bd27f82fa85b36424b9a4f2e0be16f4033a7e4e2b646"
 	xiaoAnID  = "fcf454d3-d34a-4765-bc75-e9c3aa4bd9c3"
-	wsURL     = "wss://192.168.1.99:9443/ws"
+	// Development testing URL - update for your environment
+	wsURL     = "wss://localhost:8443/ws" // or use environment variable: os.Getenv("WS_URL")
 )
 
 func main() {

@@ -1,6 +1,6 @@
 import type { ApiResponse } from '$lib/types';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://192.168.1.99:9443';
+const API_URL = import.meta.env.VITE_API_URL || window.location.origin;
 
 let authToken: string | null = null;
 

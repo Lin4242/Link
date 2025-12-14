@@ -1,7 +1,7 @@
 import type { ITransport, EncryptedMessage } from '$lib/types';
 import { createTransport, type TransportType } from '$lib/transport';
 
-const WS_URL = import.meta.env.VITE_WS_URL || 'wss://192.168.1.99:9443/ws';
+const WS_URL = import.meta.env.VITE_WS_URL || `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws`;
 const WT_URL = import.meta.env.VITE_WT_URL || '';
 
 function createTransportStore() {

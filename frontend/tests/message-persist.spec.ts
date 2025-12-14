@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 const JWT_SECRET = 'adab22111811be224304bd27f82fa85b36424b9a4f2e0be16f4033a7e4e2b646';
 const USER_ID = 'a7e5e31c-ade9-46cb-8b11-083460ae313c';
-const BASE_URL = 'https://192.168.1.99:5173';
+const BASE_URL = process.env.TEST_URL || 'http://localhost:5173';
 const TEST_PASSWORD = 'test123';
 
 test('Send message and verify persistence', async ({ page, context }) => {

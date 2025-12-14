@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	baseURL := flag.String("url", "https://192.168.1.99:5173", "Base URL for the frontend")
+	baseURL := flag.String("url", "https://localhost:5173", "Base URL for the frontend")
 	secret := flag.String("secret", "default-card-token-secret-change-me", "Secret key for HMAC (use same as server)")
 	count := flag.Int("n", 1, "Number of pairs to generate")
 	flag.Parse()
