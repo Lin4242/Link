@@ -14,15 +14,29 @@
 	let loading = $state(false);
 	let error = $state('');
 
+	// Cookie helpers for cross-tab state (Safari localStorage issues with NFC)
+	function setCookie(name: string, value: string, minutes = 10) {
+		const expires = new Date(Date.now() + minutes * 60 * 1000).toUTCString();
+		document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax`;
+	}
+
+	function getCookie(name: string): string | null {
+		const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+		return match ? decodeURIComponent(match[2]) : null;
+	}
+
+	function clearRegistrationCookies() {
+		document.cookie = 'register_first_card=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
+		document.cookie = 'register_paired_token=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
+	}
+
 	onMount(async () => {
 		const token = $page.url.searchParams.get('token');
 		const forceReset = $page.url.searchParams.get('reset') === 'true';
 
 		// Clear cache if force reset
 		if (forceReset) {
-			localStorage.removeItem('register_first_card');
-			localStorage.removeItem('register_paired_token');
-			localStorage.removeItem('register_cache_time');
+			clearRegistrationCookies();
 		}
 
 		if (!token) {
@@ -37,9 +51,9 @@
 		if (res.data?.status === 'can_register') {
 			const pairedToken = res.data.paired_token || '';
 
-			// Use localStorage instead of sessionStorage (NFC opens new tabs on iPhone)
-			const existingFirstCard = localStorage.getItem('register_first_card');
-			const existingPairedToken = localStorage.getItem('register_paired_token');
+			// Use cookies for cross-tab state (more reliable on iPhone Safari with NFC)
+			const existingFirstCard = getCookie('register_first_card');
+			const existingPairedToken = getCookie('register_paired_token');
 
 			if (existingFirstCard && existingFirstCard !== token) {
 				// Second card scanned - check if paired
@@ -48,23 +62,22 @@
 					backupToken = token;
 					step = 'form';
 					// Clear the registration state now that we have both cards
-					localStorage.removeItem('register_first_card');
-					localStorage.removeItem('register_paired_token');
+					clearRegistrationCookies();
 				} else {
 					// Not paired - start fresh with this card
 					primaryToken = token;
 					backupToken = '';
 					step = 'scan_backup';
-					localStorage.setItem('register_first_card', token);
-					localStorage.setItem('register_paired_token', pairedToken);
+					setCookie('register_first_card', token);
+					setCookie('register_paired_token', pairedToken);
 				}
 			} else {
 				// First card - will become primary
 				primaryToken = token;
 				backupToken = '';
 				step = 'scan_backup';
-				localStorage.setItem('register_first_card', token);
-				localStorage.setItem('register_paired_token', pairedToken);
+				setCookie('register_first_card', token);
+				setCookie('register_paired_token', pairedToken);
 			}
 		} else if (res.data?.status === 'primary') {
 			window.location.replace(`/login?token=${token}`);
@@ -121,8 +134,7 @@
 
 		if (res.data) {
 			// Clear registration state
-			localStorage.removeItem('register_first_card');
-			localStorage.removeItem('register_paired_token');
+			clearRegistrationCookies();
 
 			// 取得 userId 後，用密碼推導確定性金鑰
 			const { deriveKeyPairFromPassword } = await import('$lib/crypto/keys');
