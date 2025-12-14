@@ -119,9 +119,33 @@ function createMessagesStore() {
 		msg: EncryptedMessage,
 		peerPublicKey: string
 	): DecryptedMessageItem | null {
-		if (!keysStore.secretKey) return null;
+		console.log('📥 Receiving message:', {
+			msgId: msg.id,
+			senderId: msg.sender_id,
+			conversationId: msg.conversation_id,
+			hasSecretKey: !!keysStore.secretKey,
+			peerPublicKey: peerPublicKey?.substring(0, 10) + '...'
+		});
+		
+		if (!keysStore.secretKey) {
+			console.error('❌ No secret key available');
+			return null;
+		}
+		
 		const content = decryptFromString(msg.encrypted_content, peerPublicKey, keysStore.secretKey);
-		if (!content) return null;
+		if (!content) {
+			console.error('❌ Failed to decrypt message:', {
+				msgId: msg.id,
+				encryptedContent: JSON.stringify(msg.encrypted_content).substring(0, 100) + '...'
+			});
+			return null;
+		}
+		
+		console.log('✅ Message decrypted successfully:', {
+			msgId: msg.id,
+			contentLength: content.length
+		});
+		
 		const decrypted: DecryptedMessageItem = {
 			id: msg.id,
 			conversationId: msg.conversation_id,

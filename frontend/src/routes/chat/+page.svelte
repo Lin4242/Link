@@ -82,8 +82,20 @@
 
 	function setupTransportHandlers() {
 		transportStore.onMessage((msg: EncryptedMessage) => {
+			console.log('📨 Transport received message:', {
+				conversationId: msg.conversation_id,
+				senderId: msg.sender_id,
+				msgId: msg.id
+			});
+			
 			const conv = conversationsStore.conversations.find((c) => c.id === msg.conversation_id);
 			if (conv) {
+				console.log('Found conversation:', {
+					peerId: conv.peer.id,
+					peerNickname: conv.peer.nickname,
+					hasPeerPublicKey: !!conv.peer.public_key
+				});
+				
 				const decrypted = messagesStore.receiveMessage(msg, conv.peer.public_key);
 				if (decrypted) {
 					conversationsStore.updateLastMessage(msg.conversation_id, msg.created_at);
@@ -93,7 +105,11 @@
 						transportStore.sendRead(msg.conversation_id, msg.id);
 					}
 					scrollToBottom();
+				} else {
+					console.error('Failed to decrypt message in chat handler');
 				}
+			} else {
+				console.error('Conversation not found for message:', msg.conversation_id);
 			}
 		});
 
