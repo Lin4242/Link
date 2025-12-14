@@ -87,7 +87,16 @@ function createMessagesStore() {
 
 	function addMessage(conversationId: string, msg: DecryptedMessageItem): void {
 		const existing = messagesByConversation[conversationId] || [];
-		messagesByConversation[conversationId] = [...existing, msg];
+		// Force reactivity by creating a new object
+		messagesByConversation = {
+			...messagesByConversation,
+			[conversationId]: [...existing, msg]
+		};
+		console.log('📝 Message added to store:', {
+			conversationId,
+			totalMessages: messagesByConversation[conversationId].length,
+			newMessageId: msg.id
+		});
 	}
 
 	function addPendingMessage(
@@ -108,11 +117,14 @@ function createMessagesStore() {
 	}
 
 	function confirmMessage(tempId: string, realMessage: DecryptedMessageItem): void {
+		const updated: Record<string, DecryptedMessageItem[]> = {};
 		for (const convId of Object.keys(messagesByConversation)) {
-			messagesByConversation[convId] = messagesByConversation[convId].map((m) =>
+			updated[convId] = messagesByConversation[convId].map((m) =>
 				m.tempId === tempId ? { ...realMessage, pending: false } : m
 			);
 		}
+		// Force reactivity
+		messagesByConversation = updated;
 	}
 
 	function receiveMessage(
@@ -181,7 +193,11 @@ function createMessagesStore() {
 	function removeMessage(conversationId: string, messageId: string): void {
 		const existing = messagesByConversation[conversationId];
 		if (existing) {
-			messagesByConversation[conversationId] = existing.filter((m) => m.id !== messageId);
+			// Force reactivity
+			messagesByConversation = {
+				...messagesByConversation,
+				[conversationId]: existing.filter((m) => m.id !== messageId)
+			};
 		}
 	}
 

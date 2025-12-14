@@ -27,6 +27,21 @@
 			? messagesStore.getMessages(conversationsStore.activeConversationId)
 			: []
 	);
+	
+	$effect(() => {
+		if (conversationsStore.activeConversationId) {
+			console.log('📊 Messages in active conversation:', {
+				conversationId: conversationsStore.activeConversationId,
+				messageCount: messages.length,
+				messages: messages.map(m => ({
+					id: m.id,
+					senderId: m.senderId,
+					content: m.content?.substring(0, 20) + '...',
+					pending: m.pending
+				}))
+			});
+		}
+	});
 
 	const isTyping = $derived(
 		activeConversation && typingUsers[activeConversation.peer.id] ? true : false
