@@ -1,0 +1,74 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:  # 允許手動觸發
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Build frontend
+        working-directory: frontend
+        run: pnpm build
+
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: link.mcphub.tw
+          username: jimmy
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            # Pull latest code
+            cd /home/rocketmantw5516/Link
+            sudo -u rocketmantw5516 git pull origin main
+
+            # Build backend
+            cd backend
+            sudo -u rocketmantw5516 /usr/local/go/bin/go build -o bin/server ./cmd/server
+
+            # Restart backend
+            sudo systemctl restart link-backend
+
+      - name: Upload frontend build
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: link.mcphub.tw
+          username: jimmy
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "frontend/build/*"
+          target: "/tmp/link-deploy"
+          strip_components: 2
+
+      - name: Deploy frontend files
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: link.mcphub.tw
+          username: jimmy
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            sudo rm -rf /home/rocketmantw5516/Link/frontend/build/*
+            sudo cp -r /tmp/link-deploy/* /home/rocketmantw5516/Link/frontend/build/
+            rm -rf /tmp/link-deploy
+
+      - name: Health check
+        run: |
+          sleep 5
+          curl -f https://link.mcphub.tw/health || exit 1
